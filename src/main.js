@@ -5,9 +5,11 @@ import { GTX } from './tx-grow.js';
 import { createGrow } from './grow.js';
 import { RTX } from './tx-riders.js';
 import { createRiders } from './riders.js';
+import { createGoogle, GGTX } from './google.js';
 import { createVerify } from './verify.js';
 Object.assign(TX.en, VTX.en); Object.assign(TX.sw, VTX.sw);
 for (const l of ['en', 'sw']) { const { nkg, ...g } = GTX[l]; Object.assign(TX[l], g); TX[l].nk = { ...TX[l].nk, ...nkg }; }
+for (const l of ['en', 'sw']) Object.assign(TX[l], GGTX[l]);
 for (const l of ['en', 'sw']) { const { nkr, ...r } = RTX[l]; Object.assign(TX[l], r); TX[l].nk = { ...TX[l].nk, ...nkr }; }
 import { CATS, COUNTIES, TABS, EMO, PRICES, DOC, DEL, LEGAL } from './data.js';
 import { sb, BUCKET, mediaUrl, phoneEmail } from './supabase.js';
@@ -123,8 +125,10 @@ function chrome() {
   const vn = VF.unread();
   // Logged out: a clear "Log in / Sign up" button. Logged in: the existing account button.
   b.classList.toggle('lo', !m);
-  b.textContent = m ? m.name.split(' ')[0] + (pn ? ' · ' + pn : '') + (vn ? ' 🔔' + vn : '') : t('lsu');
-  b.setAttribute('aria-label', m ? t('acct') + ': ' + m.name : t('lsu'));
+  const lbl = GG.needsProfile() ? t('gFinish') : t('lsu');
+  b.textContent = m ? m.name.split(' ')[0] + (pn ? ' · ' + pn : '') + (vn ? ' 🔔' + vn : '') : lbl;
+  b.setAttribute('aria-label', m ? t('acct') + ': ' + m.name : lbl);
+  const mb = $('#mnu'); mb.setAttribute('aria-label', t('menu')); mb.title = t('menu');
   b.toggleAttribute('aria-current', S.tab == 'account');
   $('#nav').innerHTML = navTabs().map(([k, i]) => `<button data-a="tab" data-v="${k}" ${k == S.tab ? 'aria-current="page"' : ''}><span aria-hidden="true">${i}</span>${t(k)}${k == 'cart' && cnt() ? `<b aria-label="${cnt()}">${cnt()}</b>` : k == 'orders' && pendN() ? `<b aria-label="${pendN()}">${pendN()}</b>` : k == 'rides' && rideN() ? `<b aria-label="${rideN()}">${rideN()}</b>` : ''}</button>`).join('');
 }
@@ -255,15 +259,16 @@ ${VF.adminSection()}${GR.adminSection()}${RD.adminSection()}
   },
   account: () => {
     const m = me(), f = S.af;
+    if (!m && GG.needsProfile()) return GG.completeView(); // signed in with Google, profile not finished yet
     if (!m) {
       const su = S.am == 'signup', pt = S.spw ? 'text' : 'password';
-      return `<h2>${su ? t('signup') : t('login')}</h2><div class="card" id="authf">${su ? `<div class="mut" style="margin-bottom:6px">${t('iam')}</div>${['buyer', 'seller', 'rider'].map((r) => `<button class="opt" aria-pressed="${f.role == r}" data-a="role" data-v="${r}">${t(r == 'buyer' ? 'roleB' : r == 'seller' ? 'roleS' : 'roleR')}</button>`).join('')}<label class="f" for="an">${t('fname')}</label><input type="text" id="an" maxlength="40" autocomplete="name" value="${esc(f.name)}" data-m="af.name">${f.role == 'seller' ? `<label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz">` : ''}<label class="f" for="ay">${t('county')}</label><select id="ay" data-m="af.y">${opts(COUNTIES.slice(1), f.y)}</select>` : ''}<label class="f" for="ap">${t('lphone')}</label><input type="tel" id="ap" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(f.phone)}" data-m="af.phone"><label class="f" for="aw">${su ? t('pw') : t('pwl')}</label><input type="${pt}" id="aw" maxlength="64" autocomplete="${su ? 'new-password' : 'current-password'}" value="${esc(f.pw)}" data-m="af.pw">${su ? `<label class="f" for="aw2">${t('pw2')}</label><input type="${pt}" id="aw2" maxlength="64" autocomplete="new-password" value="${esc(f.pw2)}" data-m="af.pw2">` : ''}<label class="ck"><input type="checkbox" data-a-change="spw" ${S.spw ? 'checked' : ''}><span>${t('show')}</span></label><p class="err" id="aerr" role="alert"></p><button class="btn" data-a="auth" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : su ? t('signup') : t('login')}</button><button class="lk" data-a="goauth" data-v="${su ? 'login' : 'signup'}">${su ? t('haveacc') : t('noacc')}</button>${su ? '' : `<br><button class="lk" data-a="forgot">${t('forgot')}</button>`}</div><div class="note">${t('accN')}</div>`;
+      return `<h2>${su ? t('signup') : t('login')}</h2><div class="card" id="authf">${GG.button(su ? t('gUp') : t('gCont'))}${su ? `<div class="mut" style="margin-bottom:6px">${t('iam')}</div>${['buyer', 'seller', 'rider'].map((r) => `<button class="opt" aria-pressed="${f.role == r}" data-a="role" data-v="${r}">${t(r == 'buyer' ? 'roleB' : r == 'seller' ? 'roleS' : 'roleR')}</button>`).join('')}<label class="f" for="an">${t('fname')}</label><input type="text" id="an" maxlength="40" autocomplete="name" value="${esc(f.name)}" data-m="af.name">${f.role == 'seller' ? `<label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz">` : ''}<label class="f" for="ay">${t('county')}</label><select id="ay" data-m="af.y">${opts(COUNTIES.slice(1), f.y)}</select>` : ''}<label class="f" for="ap">${t('lphone')}</label><input type="tel" id="ap" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(f.phone)}" data-m="af.phone"><label class="f" for="aw">${su ? t('pw') : t('pwl')}</label><input type="${pt}" id="aw" maxlength="64" autocomplete="${su ? 'new-password' : 'current-password'}" value="${esc(f.pw)}" data-m="af.pw">${su ? `<label class="f" for="aw2">${t('pw2')}</label><input type="${pt}" id="aw2" maxlength="64" autocomplete="new-password" value="${esc(f.pw2)}" data-m="af.pw2">` : ''}<label class="ck"><input type="checkbox" data-a-change="spw" ${S.spw ? 'checked' : ''}><span>${t('show')}</span></label><p class="err" id="aerr" role="alert"></p><button class="btn" data-a="auth" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : su ? t('signup') : t('login')}</button><button class="lk" data-a="goauth" data-v="${su ? 'login' : 'signup'}">${su ? t('haveacc') : t('noacc')}</button>${su ? '' : `<br><button class="lk" data-a="forgot">${t('forgot')}</button>`}</div><div class="note">${t('accN')}</div>`;
     }
     const mine = S.listings.filter((p) => p.owner == m.id), so = S.orders.filter((o) => o.sl == m.id), bo = S.orders.filter((o) => o.b == m.id);
     return `<h2>${t('acct')}</h2><div class="card"><div class="pn">${esc(m.name)}${VF.badge(m.id)} <span class="badge">${t(m.role)}</span>${isAdmin() ? ` <span class="badge">${t('admin')}</span>` : ''}</div>${m.biz ? `<div class="mut">🏪 ${esc(m.biz)}</div>` : ''}<div class="mut">📞 ${showPh(m.phone)}</div><div class="mut">📍 ${esc(m.county)}</div><div class="mut">${t('since')} ${new Date(m.created_at).toLocaleDateString('en-KE')}</div></div>${isAdmin() ? `<button class="btn sun" data-a="admin">🛡️ ${t('adminD')}</button>` : ''}` +
       (m.role == 'rider' ? `${VF.notesCard()}${RD.accountCard()}` : m.role == 'buyer' ? `${VF.notesCard()}<div class="card"><div class="pn">${t('become')}</div><p class="mut">${t('becomeN')}</p><label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz"><button class="btn sun" data-a="become">${t('become')}</button></div>` :
         `${VF.notesCard()}${GR.accountButton()}${VF.accountCard()}${VF.waCard()}<h2 style="margin-top:18px">${t('myl')}</h2><div class="card">${mine.length ? mine.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}${p.hidden ? ' · ' + t('hid') : ''}</div>${RD.listingChips(p)}</div><button class="chip" data-a="rml" data-id="${p.id}">${t('prm')}</button></div>`).join('') : `<p class="mut">${t('nol')}</p>`}<button class="btn" data-a="tab" data-v="sell">➕ ${t('sellH')}</button></div><h2 style="margin-top:18px">${t('soldH')}</h2><button class="btn out" data-a="tab" data-v="orders">📋 ${t('orders')} (${so.length})</button>`) +
-      `<h2 style="margin-top:18px">${t('ord')}</h2>${bo.length ? `<button class="btn out" data-a="tab" data-v="cart">${t('ord')} (${bo.length}) →</button>` : `<p class="mut">${t('noord')}</p>`}<button class="btn out" data-a="logout" style="margin-top:14px">${t('logout')}</button><button class="lk" data-a="delacc">${t('del')}</button><div class="note">${t('accN')}</div>`;
+      `<h2 style="margin-top:18px">${t('ord')}</h2>${bo.length ? `<button class="btn out" data-a="tab" data-v="cart">${t('ord')} (${bo.length}) →</button>` : `<p class="mut">${t('noord')}</p>`}${GG.linkCard()}<button class="btn out" data-a="logout" style="margin-top:14px">${t('logout')}</button><button class="lk" data-a="delacc">${t('del')}</button><div class="note">${t('accN')}</div>`;
   },
 };
 
@@ -307,8 +312,9 @@ const A = {
   crop: (d) => { S.crop = d.v; S.sym = null; render(); },
   sym: (d) => { S.sym = +d.v; render(); },
   find: () => { const s = DOC[S.crop][S.sym]; S.cat = s[3]; S.q = s[4]; S.cty = 'All'; S.tab = 'shop'; render(); scrollTo(0, 0); },
-  lang: () => { S.lang = S.lang == 'en' ? 'sw' : 'en'; save(); render(); },
-  info: () => dlgOpen(LEGAL),
+  lang: () => { menu(false); S.lang = S.lang == 'en' ? 'sw' : 'en'; save(); render(); },
+  info: () => { menu(false); dlgOpen(LEGAL); },
+  menu: () => menu(),
   close: () => $('#dlg').close(),
   report: (d) => guarded(async () => {
     if (d.id == '-1') return toast(t('pvonly'));
@@ -479,6 +485,10 @@ Object.assign(A, GR.actions);
 const RD = createRiders({ S, t, esc, KES, sb, toast, rpc, guarded, errMsg, VF, V, opts, COUNTIES, dlgOpen, fT: fTx, render: () => render() });
 V.rides = () => RD.dash();
 Object.assign(A, RD.actions);
+// ------------------------------------------------------------------ Google sign-in
+const GG = createGoogle({ S, t, esc, sb, toast, rpc, guarded, opts, COUNTIES, normPh, refreshAll: () => refreshAll(), render: () => render() });
+Object.assign(A, GG.actions);
+GG.readRedirectError();
 ['admin', 'rdis', 'rhide', 'hide', 'unhide', 'rph'].forEach((k) => { const f = A[k]; A[k] = (...a) => (isAdmin() ? f(...a) : toast(t('noAdmin'))); });
 
 async function reloadOrders() {
@@ -488,6 +498,13 @@ async function reloadOrders() {
 }
 
 document.addEventListener('keydown', (e) => { const el = e.target; if (e.key == 'Enter' && el.tagName == 'INPUT' && el.type != 'checkbox' && el.closest('#authf')) { e.preventDefault(); A.auth(); } });
+// Header menu (☰): Help & legal and language. Closes on outside tap or Escape.
+function menu(open) {
+  const p = $('#hm'), b = $('#mnu'), o = open ?? p.hidden;
+  p.hidden = !o; b.setAttribute('aria-expanded', String(o));
+}
+document.addEventListener('pointerdown', (e) => { if (!$('#hm').hidden && !e.target.closest('#hm, #mnu')) menu(false); });
+document.addEventListener('keydown', (e) => { if (e.key == 'Escape' && !$('#hm').hidden) { menu(false); $('#mnu').focus(); } });
 document.addEventListener('click', (e) => { const b = e.target.closest('[data-a]'); if (b && A[b.dataset.a]) A[b.dataset.a](b.dataset); if (e.target == $('#dlg')) $('#dlg').close(); });
 document.addEventListener('input', (e) => {
   const el = e.target;
@@ -510,4 +527,4 @@ sb.auth.onAuthStateChange((ev) => { if (ev == 'SIGNED_IN' || ev == 'SIGNED_OUT')
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { Promise.all([loadListings(), VF.loadVerified(), GR.loadPublic()]).then(() => { if (S.tab == 'shop') fill(); }); if (S.user) reloadOrders(); } });
 
 render();
-refreshAll().then(() => { if (S.profile) { S.phone = showPh(S.profile.phone); S.f.y = S.profile.county; } subscribe(); render(); });
+refreshAll().then(() => { if (GG.needsProfile()) S.tab = 'account'; if (S.profile) { S.phone = showPh(S.profile.phone); S.f.y = S.profile.county; } subscribe(); render(); });
