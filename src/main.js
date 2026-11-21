@@ -123,7 +123,7 @@ function chrome() {
   const vn = VF.unread();
   // Logged out: a clear "Log in / Sign up" button. Logged in: the existing account button.
   b.classList.toggle('lo', !m);
-  b.textContent = m ? '👤 ' + m.name.split(' ')[0] + (pn ? ' · ' + pn : '') + (vn ? ' 🔔' + vn : '') : t('lsu');
+  b.textContent = m ? m.name.split(' ')[0] + (pn ? ' · ' + pn : '') + (vn ? ' 🔔' + vn : '') : t('lsu');
   b.setAttribute('aria-label', m ? t('acct') + ': ' + m.name : t('lsu'));
   b.toggleAttribute('aria-current', S.tab == 'account');
   $('#nav').innerHTML = navTabs().map(([k, i]) => `<button data-a="tab" data-v="${k}" ${k == S.tab ? 'aria-current="page"' : ''}><span aria-hidden="true">${i}</span>${t(k)}${k == 'cart' && cnt() ? `<b aria-label="${cnt()}">${cnt()}</b>` : k == 'orders' && pendN() ? `<b aria-label="${pendN()}">${pendN()}</b>` : k == 'rides' && rideN() ? `<b aria-label="${rideN()}">${rideN()}</b>` : ''}</button>`).join('');
