@@ -51,7 +51,7 @@ select id from public.profiles where phone = '2547XXXXXXXX';
 
 - Sellers apply from **Account → Get verified**: legal name, phone, ID, business name and location, products, and four **live camera** photos (face front, face side, products, seller with products). Gallery uploads are not possible. Consent to collecting face photos is required.
 - Fee: **KSh 500** by default. Admins can change the fee, validity (default 12 months) and payment instructions in the Admin dashboard.
-- Payment: the seller enters the M-Pesa confirmation code, or Shamba Soko confirms payment manually. Payment alone never gives the badge: an admin must **confirm payment and approve**.
+- Payment: **M-Pesa Paybill 1315388**, account number = the seller's **full name** (admins can change both; changes are audited). The seller enters the M-Pesa transaction code after paying, or Shamba Soko confirms payment manually. Payment alone never gives the badge: an admin must check the transaction, **confirm payment and approve**.
 - Admins review details and photos, confirm or reject payment, approve, reject, request more information, suspend, reinstate or revoke, and see the history and expiry date.
 - The blue tick shows beside the seller on shop cards and search results, cart, orders, the contact dialog and the seller's profile. Tapping it explains what was checked.
 - Photos are in the private `verification-photos` bucket (seller and admins only). The badge comes only from approved, paid, unexpired applications; sellers cannot set it themselves.

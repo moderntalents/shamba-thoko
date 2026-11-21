@@ -9,7 +9,7 @@ export function createVerify(c) {
   const { S, t, esc, KES, sb, toast, dlgOpen, rpc, guarded, errMsg, opts, COUNTIES, showPh, rid } = c;
   const fD = (d) => new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
   const fmt = (s, d) => s.replace('{d}', d).replace('{f}', KES(S.vset.fee));
-  S.verified = new Map(); S.vset = { fee: 500, months: 12, info: '' }; S.myv = null; S.vapps = []; S.vfilt = 'pending'; S.vurls = {};
+  S.verified = new Map(); S.vset = { fee: 500, months: 12, info: '', paybill: '1315388', accRule: 'Your full name (as on your ID)' }; S.myv = null; S.vapps = []; S.vfilt = 'pending'; S.vurls = {};
   S.vcases = {}; S.vblocks = []; S.vaudit = []; S.vqueue = 0; S.vnotes = [];
   const blankVf = () => ({ legal: '', phone: '', idType: 'national_id', idNo: '', biz: '', y: 'Kiambu', loc: '', prod: '', ph: {}, pay: 'mpesa', code: '', consent: false });
   S.vf = blankVf();
@@ -22,6 +22,8 @@ export function createVerify(c) {
       if (r.key == 'verification_fee') S.vset.fee = Number(r.value);
       if (r.key == 'verification_months') S.vset.months = Number(r.value);
       if (r.key == 'verification_payment_info') S.vset.info = String(r.value);
+      if (r.key == 'verification_paybill') S.vset.paybill = String(r.value);
+      if (r.key == 'verification_account_rule') S.vset.accRule = String(r.value);
     }
   }
   async function loadMine() {
@@ -90,12 +92,13 @@ export function createVerify(c) {
   // ------------------------------------------------------------ views
   function payBlock(withChoice) {
     const f = S.vf;
-    return `<div class="card"><div class="pn">💳 ${t('vPay')}</div><div class="tr"><span class="mut">${t('vPayFee')}</span><b>${KES(S.vset.fee)}</b></div>${S.vset.info ? `<p class="mut">${esc(S.vset.info)}</p>` : ''}${withChoice ? `<div class="mut" style="margin:6px 0">${t('vPayHow')}</div>${['mpesa', 'manual', 'later'].map((k) => `<button class="opt" aria-pressed="${f.pay == k}" data-a="vpay" data-v="${k}">${t(k == 'mpesa' ? 'vPayMpesa' : k == 'manual' ? 'vPayManual' : 'vPayLater')}</button>`).join('')}` : ''}${f.pay == 'mpesa' ? `<label class="f" for="vcode">${t('vCode')}</label><input type="text" id="vcode" maxlength="12" autocapitalize="characters" value="${esc(f.code)}" data-m="vf.code">` : ''}<div class="note">${t('vPayNote')}</div></div>`;
+    const acc = (f.legal || (S.myv && S.myv.legal_name) || (S.profile && S.profile.name) || '').trim();
+    return `<div class="card"><div class="pn">💳 ${t('vPay')}</div><div class="pbox"><div class="pn">${t('vPbTitle')}</div><div class="tr"><span class="mut">${t('vPbBiz')}</span><b class="pbnum">${esc(S.vset.paybill)}</b></div><div class="tr"><span class="mut">${t('vPbAcc')}</span><b id="vpbacc">${acc ? esc(acc) : esc(S.vset.accRule)}</b></div>${acc ? `<div class="mut">${esc(S.vset.accRule)}</div>` : ''}<div class="tr"><span class="mut">${t('vPayFee')}</span><b>${KES(S.vset.fee)}</b></div></div>${S.vset.info ? `<p class="mut">${esc(S.vset.info)}</p>` : ''}${withChoice ? `<div class="mut" style="margin:6px 0">${t('vPayHow')}</div>${['mpesa', 'manual', 'later'].map((k) => `<button class="opt" aria-pressed="${f.pay == k}" data-a="vpay" data-v="${k}">${t(k == 'mpesa' ? 'vPayMpesa' : k == 'manual' ? 'vPayManual' : 'vPayLater')}</button>`).join('')}` : ''}${f.pay == 'mpesa' ? `<label class="f" for="vcode">${t('vCode')}</label><input type="text" id="vcode" maxlength="12" autocapitalize="characters" value="${esc(f.code)}" data-m="vf.code">` : ''}<div class="note">${t('vPayNote')}</div></div>`;
   }
   function form() {
     const f = S.vf, upd = S.myv && S.myv.status == 'info_requested';
     return `<h2>✓ ${t('vH')}</h2><p class="mut">${t('vIntro')}</p>${upd && S.myv.admin_note ? `<div class="note"><b>${t('vAdminNote')}:</b> ${esc(S.myv.admin_note)}</div>` : ''}
-<div class="card"><label class="f" for="vl">${t('vLegal')}</label><input type="text" id="vl" maxlength="80" autocomplete="name" value="${esc(f.legal)}" data-m="vf.legal">
+<div class="card"><label class="f" for="vl">${t('vLegal')}</label><input type="text" id="vl" maxlength="80" autocomplete="name" value="${esc(f.legal)}" data-m="vf.legal" data-r="vacc">
 <label class="f" for="vp">${t('vPhone')}</label><input type="tel" id="vp" inputmode="tel" maxlength="16" value="${esc(f.phone)}" data-m="vf.phone">
 <div class="row"><div><label class="f" for="vit">${t('vIdType')}</label><select id="vit" data-m="vf.idType">${Object.entries(t('vIdTypes')).map(([k, l]) => `<option value="${k}" ${f.idType == k ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div><label class="f" for="vin">${t('vIdNo')}</label><input type="text" id="vin" maxlength="12" autocomplete="off" value="${esc(f.idNo)}" data-m="vf.idNo"></div></div>
 <label class="f" for="vb">${t('vBiz')}</label><input type="text" id="vb" maxlength="80" value="${esc(f.biz)}" data-m="vf.biz">
@@ -139,6 +142,7 @@ ${canApply() && (s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == '
     const sellerName = (v) => { const a = S.accounts.find((x) => x.id == v.seller); return a ? a.name : ''; };
     return `<h2 style="margin-top:18px">Seller verification</h2>
 <div class="card"><div class="pn">Settings</div><div class="row"><div><label class="f" for="vsfee">Fee (KSh)</label><input type="number" id="vsfee" min="0" max="100000" value="${S.vset.fee}"></div><div><label class="f" for="vsmon">Valid for (months)</label><input type="number" id="vsmon" min="1" max="36" value="${S.vset.months}"></div></div><label class="f" for="vsinfo">Payment instructions shown to sellers</label><input type="text" id="vsinfo" maxlength="500" value="${esc(S.vset.info)}"><button class="btn out" data-a="vsettings">Save settings</button></div>
+<div class="card"><div class="pn">M-Pesa payment details</div><div class="row"><div><label class="f" for="vspb">Paybill number</label><input type="text" id="vspb" inputmode="numeric" maxlength="7" value="${esc(S.vset.paybill)}"></div><div><label class="f" for="vsacc">Account number to use</label><input type="text" id="vsacc" maxlength="80" value="${esc(S.vset.accRule)}"></div></div><p class="mut">Changes are recorded in the audit trail.</p><button class="btn out" data-a="vpaydetails">Save payment details</button></div>
 <div class="chips" role="group">${['pending', 'info_requested', 'approved', 'expired', 'suspended', 'rejected', 'revoked', 'withdrawn', 'superseded', 'closed', 'all'].map((k) => `<button class="chip" aria-pressed="${S.vfilt == k}" data-a="vfilt" data-v="${k}">${k == 'all' ? 'All' : t('vSt')[k]} (${k == 'all' ? L.length : cnt(k)})</button>`).join('')}</div>
 ${list.length ? list.map((v) => { const s = effSt(v); return `<div class="card"><div class="tr" style="padding-top:0"><b>${esc(v.legal_name)}</b><span class="bd ${s == 'approved' ? 'completed' : s == 'pending' || s == 'info_requested' ? 'pending' : 'cancelled'}">${t('vSt')[s]}</span></div>
 ${flags(v)}
@@ -148,6 +152,7 @@ ${flags(v)}
 <div class="mut">🧺 ${esc(v.products)}</div>
 <div class="mut">Consent given ${c.fT(v.consent_at)}</div>
 ${v.purged_at ? `<div class="note">Personal data and photos deleted on ${fD(v.purged_at)} (retention rules).</div>` : photoGrid(v)}
+<div class="mut">Check your M-Pesa statement: Paybill ${esc(S.vset.paybill)}, account <b>${esc(v.legal_name)}</b>, ${KES(v.fee)}${v.mpesa_code ? ', code <b>' + esc(v.mpesa_code) + '</b>' : ''}. Confirm only if the money was received.</div>
 <div class="note">💳 ${KES(v.fee)} · <b>${t('vPaySt')[v.payment_status]}</b>${v.payment_method ? ' · ' + (v.payment_method == 'mpesa' ? 'M-Pesa' : 'Manual') : ''}${v.mpesa_code ? ' · code <b>' + esc(v.mpesa_code) + '</b>' : ''}${v.payment_confirmed_at ? ' · confirmed ' + c.fT(v.payment_confirmed_at) : ''}</div>
 ${v.expires_at ? `<div class="mut">Approved ${v.approved_at ? c.fT(v.approved_at) : ''} · Expires ${fD(v.expires_at)}</div>` : ''}
 ${v.admin_note ? `<div class="mut">Last note: ${esc(v.admin_note)}</div>` : ''}
@@ -264,6 +269,11 @@ ${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<butto
       if (!(await rpc('update_verification', { p_id: S.myv.id, p })).error) { await loadMine(); toast(t('vPaySent')); S.busy = false; c.render(); }
     }),
     vfilt: (d) => { S.vfilt = d.v; c.render(); },
+    vpaydetails: () => guarded(async () => {
+      const pb = document.getElementById('vspb').value.trim(), acc = document.getElementById('vsacc').value.trim();
+      if (!(await rpc('admin_set_payment_details', { p_paybill: pb, p_account_rule: acc })).error) { await Promise.all([loadVerified(), loadApps()]); toast(t('o_done')); }
+      S.busy = false; c.render();
+    }),
     // Opening a photo full size records the inspection (required before approval).
     vview: (d) => guarded(async () => {
       const v = S.vapps.find((x) => x.id == d.id), u = v && S.vurls[v.photos[d.v]]; if (!u) return;
@@ -300,7 +310,7 @@ ${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<butto
     }),
   };
   // Admin-only actions are also blocked here (and always by the database).
-  ['vfilt', 'vphotos', 'vadm', 'vsettings', 'vview', 'vfraud', 'vhold', 'vlift', 'vretention'].forEach((k) => { const f = A[k]; A[k] = (...a) => (S.admin ? f(...a) : toast(t('noAdmin'))); });
+  ['vfilt', 'vphotos', 'vadm', 'vsettings', 'vpaydetails', 'vview', 'vfraud', 'vhold', 'vlift', 'vretention'].forEach((k) => { const f = A[k]; A[k] = (...a) => (S.admin ? f(...a) : toast(t('noAdmin'))); });
 
   // Seller notifications (reminders and automatic closure).
   const unread = () => S.vnotes.filter((n) => !n.read_at).length;

@@ -82,3 +82,5 @@ h2 .vb{width:24px;height:24px;font-size:14px}
 @media(min-width:620px){.vgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .vthumb{display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in}
 .vthumb img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block}
+.pbox{border:2px solid var(--g);border-radius:12px;padding:10px 12px;margin:8px 0;background:var(--gl)}
+.pbnum{font-size:20px;letter-spacing:1px}

@@ -472,6 +472,7 @@ document.addEventListener('input', (e) => {
   if (!el.dataset.m) return;
   const k = el.dataset.m.split('.'), o = k.length > 1 ? S[k[0]] : S; o[k[k.length - 1]] = el.type == 'checkbox' ? el.checked : el.value;
   if (el.dataset.r == 'fill') fill(); else if (el.dataset.r == 'render') render();
+  else if (el.dataset.r == 'vacc') { const x = $('#vpbacc'); if (x) x.textContent = el.value.trim() || S.vset.accRule; } // M-Pesa account = seller's full name
 });
 $('#dlg').addEventListener('close', () => { const v = $('#dc video'); if (v) v.pause(); });
 
