@@ -10,6 +10,7 @@ export function createVerify(c) {
   const fD = (d) => new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
   const fmt = (s, d) => s.replace('{d}', d).replace('{f}', KES(S.vset.fee));
   S.verified = new Map(); S.vset = { fee: 500, months: 12, info: '' }; S.myv = null; S.vapps = []; S.vfilt = 'pending'; S.vurls = {};
+  S.vcases = {}; S.vblocks = []; S.vaudit = []; S.vqueue = 0;
   const blankVf = () => ({ legal: '', phone: '', idType: 'national_id', idNo: '', biz: '', y: 'Kiambu', loc: '', prod: '', ph: {}, pay: 'mpesa', code: '', consent: false });
   S.vf = blankVf();
 
@@ -30,8 +31,16 @@ export function createVerify(c) {
   }
   async function loadApps() {
     S.vapps = []; if (!S.admin) return;
-    const { data, error } = await sb.from('seller_verifications').select('*').order('created_at', { ascending: false }).limit(300);
-    if (!error) S.vapps = data;
+    const [a, cs, bl, au, q] = await Promise.all([
+      sb.from('seller_verifications').select('*').order('created_at', { ascending: false }).limit(300),
+      sb.from('verification_cases').select('*').limit(300),
+      sb.from('verification_blocks').select('*').order('blocked_at', { ascending: false }).limit(100),
+      sb.from('verification_audit').select('*').order('at', { ascending: false }).limit(60),
+      sb.from('verification_purge_queue').select('id', { count: 'exact', head: true }).is('done_at', null),
+    ]);
+    if (!a.error) S.vapps = a.data;
+    S.vcases = {}; (cs.data || []).forEach((x) => (S.vcases[x.application_id] = x));
+    S.vblocks = bl.data || []; S.vaudit = au.data || []; S.vqueue = q.count || 0;
   }
   async function signed(paths) {
     const need = paths.filter((p) => p && !S.vurls[p]); if (!need.length) return;
@@ -95,7 +104,8 @@ ${upd && S.myv.payment_status == 'confirmed' ? '' : payBlock(true)}
 <button class="btn sun" data-a="vsubmit" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : upd ? t('vResubmit') : t('vSubmit')}</button>
 <button class="btn out" data-a="tab" data-v="account">← ${t('acct')}</button>`;
   }
-  const canApply = () => { const s = effSt(S.myv); return s == 'none' || s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'expired' || (s == 'approved' && new Date(S.myv.expires_at) - Date.now() < 30 * 864e5); };
+  const waitUntil = () => (S.myv && S.myv.status == 'revoked' && S.myv.closed_at ? new Date(new Date(S.myv.closed_at).getTime() + 90 * 864e5) : null);
+  const canApply = () => { const s = effSt(S.myv), w = waitUntil(); if (w && w > new Date()) return false; return s == 'none' || s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'superseded' || s == 'expired' || (s == 'approved' && new Date(S.myv.expires_at) - Date.now() < 30 * 864e5); };
   function view() {
     if (!S.profile || S.profile.role != 'seller') { S.tab = 'account'; return c.V.account(); }
     const s = effSt(S.myv);
@@ -114,7 +124,8 @@ ${v.admin_note && s != 'approved' ? `<div class="note"><b>${t('vAdminNote')}:</b
 ${s == 'suspended' ? `<p class="mut">${t('vSuspN')}</p>` : ''}
 ${s == 'pending' && v.payment_status != 'confirmed' && v.payment_status != 'submitted' ? payBlock(false) + `<button class="btn" data-a="vaddpay">${t('vAddPay')}</button>` : ''}
 ${s == 'info_requested' ? `<button class="btn sun" data-a="vstart">${t('vUpdate')}</button>` : ''}
-${s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'expired' || expSoon ? `<p class="mut">${t('vRenewN')}</p><button class="btn sun" data-a="vstart">✓ ${s == 'rejected' ? t('vGet') : t('vRenew')} · ${KES(S.vset.fee)}</button>` : ''}</div>`;
+${waitUntil() && waitUntil() > new Date() ? `<p class="mut">${fmt(t('vWait'), fD(waitUntil()))}</p>` : ''}
+${canApply() && (s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'expired' || expSoon) ? `<p class="mut">${t('vRenewN')}</p><button class="btn sun" data-a="vstart">✓ ${s == 'rejected' ? t('vGet') : t('vRenew')} · ${KES(S.vset.fee)}</button>` : ''}</div>`;
   }
   // Admin dashboard section.
   function adminSection() {
@@ -123,26 +134,71 @@ ${s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'expired' || exp
     const sellerName = (v) => { const a = S.accounts.find((x) => x.id == v.seller); return a ? a.name : ''; };
     return `<h2 style="margin-top:18px">Seller verification</h2>
 <div class="card"><div class="pn">Settings</div><div class="row"><div><label class="f" for="vsfee">Fee (KSh)</label><input type="number" id="vsfee" min="0" max="100000" value="${S.vset.fee}"></div><div><label class="f" for="vsmon">Valid for (months)</label><input type="number" id="vsmon" min="1" max="36" value="${S.vset.months}"></div></div><label class="f" for="vsinfo">Payment instructions shown to sellers</label><input type="text" id="vsinfo" maxlength="500" value="${esc(S.vset.info)}"><button class="btn out" data-a="vsettings">Save settings</button></div>
-<div class="chips" role="group">${['pending', 'info_requested', 'approved', 'expired', 'suspended', 'rejected', 'revoked', 'withdrawn', 'all'].map((k) => `<button class="chip" aria-pressed="${S.vfilt == k}" data-a="vfilt" data-v="${k}">${k == 'all' ? 'All' : t('vSt')[k]} (${k == 'all' ? L.length : cnt(k)})</button>`).join('')}</div>
+<div class="chips" role="group">${['pending', 'info_requested', 'approved', 'expired', 'suspended', 'rejected', 'revoked', 'withdrawn', 'superseded', 'all'].map((k) => `<button class="chip" aria-pressed="${S.vfilt == k}" data-a="vfilt" data-v="${k}">${k == 'all' ? 'All' : t('vSt')[k]} (${k == 'all' ? L.length : cnt(k)})</button>`).join('')}</div>
 ${list.length ? list.map((v) => { const s = effSt(v); return `<div class="card"><div class="tr" style="padding-top:0"><b>${esc(v.legal_name)}</b><span class="bd ${s == 'approved' ? 'completed' : s == 'pending' || s == 'info_requested' ? 'pending' : 'cancelled'}">${t('vSt')[s]}</span></div>
+${flags(v)}
 <div class="mut">Account: ${esc(sellerName(v))} · Applied ${c.fT(v.created_at)}</div>
 <div class="mut">📞 ${showPh(v.phone)} · ${t('vIdTypes')[v.id_type]} <b>${esc(v.id_number)}</b></div>${L.some((o) => o.seller != v.seller && o.id_type == v.id_type && o.id_number == v.id_number) ? '<div class="warn">⚠ This ID number also appears on another seller’s application. Check carefully.</div>' : ''}
 <div class="mut">🏪 ${esc(v.business_name)} · 📍 ${esc(v.location)}, ${esc(v.county)}</div>
 <div class="mut">🧺 ${esc(v.products)}</div>
 <div class="mut">Consent given ${c.fT(v.consent_at)}</div>
-<div class="vgrid">${SLOTS.map((k) => { const u = S.vurls[v.photos[k]]; return `<div class="vslot">${u ? `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${esc(t('vSlots')[k])}"></a>` : `<button class="btn out" data-a="vphotos" data-id="${v.id}">Show photos</button>`}<div class="mut">${t('vSlots')[k]}</div></div>`; }).join('')}</div>
+${v.purged_at ? `<div class="note">Personal data and photos deleted on ${fD(v.purged_at)} (retention rules).</div>` : photoGrid(v)}
 <div class="note">💳 ${KES(v.fee)} · <b>${t('vPaySt')[v.payment_status]}</b>${v.payment_method ? ' · ' + (v.payment_method == 'mpesa' ? 'M-Pesa' : 'Manual') : ''}${v.mpesa_code ? ' · code <b>' + esc(v.mpesa_code) + '</b>' : ''}${v.payment_confirmed_at ? ' · confirmed ' + c.fT(v.payment_confirmed_at) : ''}</div>
 ${v.expires_at ? `<div class="mut">Approved ${v.approved_at ? c.fT(v.approved_at) : ''} · Expires ${fD(v.expires_at)}</div>` : ''}
 ${v.admin_note ? `<div class="mut">Last note: ${esc(v.admin_note)}</div>` : ''}
 ${adminActs(v, s)}
-<details><summary>History</summary>${(v.history || []).map((h) => `<div class="tl">${c.fT(h.at)} · ${esc(h.s)} · ${esc(h.by)}${h.note ? ' · ' + esc(h.note) : ''}</div>`).join('')}</details></div>`; }).join('') : '<p class="mut">No applications here.</p>'}`;
+${caseActs(v)}
+<details><summary>History</summary>${(v.history || []).map((h) => `<div class="tl">${c.fT(h.at)} · ${esc(h.s)} · ${esc(h.by)}${h.note ? ' · ' + esc(h.note) : ''}</div>`).join('')}</details></div>`; }).join('') : '<p class="mut">No applications here.</p>'}
+${blocksSection()}${retentionSection()}${auditSection()}`;
+  }
+  const mine = (v) => { const r = (S.vcases[v.id] || {}).photo_reviews || {}; return SLOTS.filter((k) => r[k] && r[k].by == S.user.id && new Date(r[k].at) >= new Date(v.details_at)); };
+  function flags(v) {
+    const cs = S.vcases[v.id] || {}, out = [];
+    if (cs.fraud) out.push('<span class="bd cancelled">Fraud</span>');
+    if (cs.legal_hold) out.push(`<span class="bd pending">Legal hold</span> <span class="mut">${esc(cs.hold_note)}</span>`);
+    if (S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at && !b.redacted_at)) out.push('<span class="bd cancelled">Blocked</span>');
+    out.push(`<span class="mut">${esc(keepText(v, cs))}</span>`);
+    return `<div style="margin:4px 0">${out.join(' ')}</div>`;
+  }
+  // Mirrors the database retention rules, for display only.
+  function keepText(v, cs) {
+    if (v.purged_at) return 'Personal data deleted';
+    if (cs.legal_hold) return 'Kept: legal hold';
+    if (['pending', 'info_requested'].includes(v.status)) return 'Kept while open';
+    if (v.status == 'suspended') return 'Kept while suspended';
+    const add = (d, m) => { const x = new Date(d); x.setMonth(x.getMonth() + m); return x; };
+    if (cs.fraud) return 'Fraud record: kept until ' + fD(add(v.closed_at || v.updated_at, 60));
+    if (v.approved_at) { const end = [v.expires_at, v.closed_at].filter(Boolean).map((d) => new Date(d)).sort((a, b) => b - a)[0]; return 'Kept until ' + fD(add(end, 12)); }
+    return 'ID and photos deleted ' + fD(new Date(new Date(v.closed_at || v.updated_at).getTime() + 90 * 864e5));
+  }
+  function photoGrid(v) {
+    const done = mine(v), open = v.status == 'pending' || v.status == 'info_requested';
+    return `<div class="vgrid">${SLOTS.map((k) => { const u = S.vurls[v.photos[k]]; return `<div class="vslot">${u ? `<button class="vthumb" data-a="vview" data-id="${v.id}" data-v="${k}" aria-label="Open ${esc(t('vSlots')[k])} full size"><img src="${esc(u)}" alt="${esc(t('vSlots')[k])}"></button>` : `<button class="btn out" data-a="vphotos" data-id="${v.id}">Show photos</button>`}<div class="mut">${done.includes(k) ? '✅ Inspected · ' : ''}${t('vSlots')[k]}</div></div>`; }).join('')}</div>${open ? `<div class="${done.length == 4 ? 'note' : 'warn'}">Photos inspected by you: ${done.length}/4. Open each photo full size before approving.</div>` : ''}`;
+  }
+  function caseActs(v) {
+    if (v.purged_at) return '';
+    const cs = S.vcases[v.id] || {};
+    return `<details><summary>Fraud, block and legal hold</summary><label class="f" for="vc-${v.id}">Reason (required)</label><input type="text" id="vc-${v.id}" maxlength="300">
+${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<button class="btn" style="background:var(--red)" data-a="vadm" data-x="block" data-id="${v.id}" data-n="vc">⛔ Block permanently (fraud)</button>`}
+<button class="btn out" data-a="vfraud" data-id="${v.id}" data-v="${cs.fraud ? '0' : '1'}">${cs.fraud ? 'Clear fraud flag' : 'Mark as fraud (keep 5 years)'}</button>
+<button class="btn out" data-a="vhold" data-id="${v.id}" data-v="${cs.legal_hold ? '0' : '1'}">${cs.legal_hold ? 'Remove legal hold' : 'Put on legal hold (never delete)'}</button></details>`;
+  }
+  function blocksSection() {
+    const act = S.vblocks.filter((b) => !b.lifted_at && !b.redacted_at);
+    return `<h2 style="margin-top:18px">Blocked sellers (${act.length})</h2>${act.length ? act.map((b) => `<div class="card"><div class="pn">${esc(b.id_number || '')} · ${showPh(b.phone || '')}</div><div class="mut">Blocked ${c.fT(b.blocked_at)} · ${esc(b.reason)}</div><label class="f" for="vlb-${b.id}">Reason for lifting</label><input type="text" id="vlb-${b.id}" maxlength="300"><button class="btn out" data-a="vlift" data-id="${b.id}">Lift block</button></div>`).join('') : '<p class="mut">No blocked sellers.</p>'}`;
+  }
+  function retentionSection() {
+    return `<h2 style="margin-top:18px">Data retention</h2><div class="card"><p class="mut">Runs automatically every night. Not approved: ID and photos deleted 90 days after closing. Approved: kept for the verification period plus 12 months. Fraud: kept 5 years. Open, suspended and legal-hold records are never deleted.</p><div class="mut">Photo files waiting for deletion: ${S.vqueue}</div><button class="btn out" data-a="vretention">Run retention now</button></div>`;
+  }
+  function auditSection() {
+    return `<details style="margin-top:12px"><summary>Audit trail (latest ${S.vaudit.length})</summary>${S.vaudit.map((a) => `<div class="tl">${c.fT(a.at)} · ${esc(a.action)}${a.application_id ? ' · #' + a.application_id : ''} · ${esc(a.actor_kind)}${a.detail && a.detail.note ? ' · ' + esc(a.detail.note) : ''}${a.detail && a.detail.rule ? ' · ' + esc(a.detail.rule) : ''}</div>`).join('')}</details>`;
   }
   function adminActs(v, s) {
     const b = (a, l, cls = 'out') => `<button class="btn ${cls}" data-a="vadm" data-x="${a}" data-id="${v.id}">${l}</button>`;
     let h = '';
     if (s == 'pending' || s == 'info_requested') {
       if (v.payment_status != 'confirmed') h += b('confirm_payment', 'Confirm payment received', '') + b('reject_payment', 'Payment not received');
-      if (s == 'pending') h += b('approve', v.payment_status == 'confirmed' ? '✓ Approve and give blue tick' : 'Approve (confirm payment first)', 'sun');
+      if (s == 'pending') h += b('approve', v.payment_status != 'confirmed' ? 'Approve (confirm payment first)' : mine(v).length < 4 ? 'Approve (inspect all 4 photos first)' : '✓ Approve and give blue tick', 'sun');
       h += b('request_info', 'Request more information') + b('reject', 'Reject application');
     } else if (s == 'approved') h += b('suspend', 'Suspend') + b('revoke', 'Revoke');
     else if (s == 'suspended') h += b('reinstate', 'Reinstate', '') + b('revoke', 'Revoke');
@@ -203,9 +259,32 @@ ${adminActs(v, s)}
       if (!(await rpc('update_verification', { p_id: S.myv.id, p })).error) { await loadMine(); toast(t('vPaySent')); S.busy = false; c.render(); }
     }),
     vfilt: (d) => { S.vfilt = d.v; c.render(); },
+    // Opening a photo full size records the inspection (required before approval).
+    vview: (d) => guarded(async () => {
+      const v = S.vapps.find((x) => x.id == d.id), u = v && S.vurls[v.photos[d.v]]; if (!u) return;
+      dlgOpen(`<h2>${esc(t('vSlots')[d.v])}</h2><img src="${esc(u)}" alt="${esc(t('vSlots')[d.v])}" style="width:100%;max-height:70vh;object-fit:contain;background:#000;border-radius:10px"><p class="mut">${esc(v.legal_name)} · ${esc(v.business_name)}</p>`);
+      const r = await rpc('admin_record_photo_review', { p_id: v.id, p_key: d.v });
+      if (!r.error) S.vcases[v.id] = { ...(S.vcases[v.id] || {}), photo_reviews: r.data };
+      S.busy = false; c.render();
+    }),
+    vfraud: (d) => guarded(async () => { const n = (document.getElementById('vc-' + d.id) || {}).value || ''; if (!(await rpc('admin_set_fraud', { p_id: +d.id, p_fraud: d.v == '1', p_note: n.trim() })).error) { await loadApps(); toast(t('o_done')); } S.busy = false; c.render(); }),
+    vhold: (d) => guarded(async () => { const n = (document.getElementById('vc-' + d.id) || {}).value || ''; if (!(await rpc('admin_set_legal_hold', { p_id: +d.id, p_hold: d.v == '1', p_note: n.trim() })).error) { await loadApps(); toast(t('o_done')); } S.busy = false; c.render(); }),
+    vlift: (d) => guarded(async () => { const n = (document.getElementById('vlb-' + d.id) || {}).value || ''; if (!(await rpc('admin_lift_block', { p_block: +d.id, p_note: n.trim() })).error) { await loadApps(); toast(t('o_done')); } S.busy = false; c.render(); }),
+    // Same work as the nightly job: apply the rules, then securely delete the queued files via the Storage API.
+    vretention: () => guarded(async () => {
+      const run = await rpc('verification_retention_run', {}); if (run.error) { S.busy = false; return; }
+      let deleted = 0;
+      for (let i = 0; i < 10; i++) {
+        const p = await rpc('verification_purge_pending', { p_limit: 100 }); if (p.error || !p.data.length) break;
+        const rm = await sb.storage.from(VBUCKET).remove(p.data.map((x) => x.path)); if (rm.error) { toast(errMsg(rm.error)); break; }
+        const dn = await rpc('verification_purge_done', { p_ids: p.data.map((x) => x.id) }); if (dn.error) break; deleted += p.data.length;
+      }
+      await loadApps(); S.busy = false; c.render();
+      toast(`Retention: ${run.data.records_purged} records cleaned, ${deleted} photo files deleted`);
+    }),
     vphotos: () => guarded(async () => { await signed(S.vapps.flatMap((v) => SLOTS.map((k) => v.photos[k]))); S.busy = false; c.render(); }),
     vadm: (d) => guarded(async () => {
-      const note = (document.getElementById('vn-' + d.id) || {}).value || '', v = S.vapps.find((x) => x.id == d.id); if (!v) return;
+      const note = (document.getElementById((d.n || 'vn') + '-' + d.id) || {}).value || '', v = S.vapps.find((x) => x.id == d.id); if (!v) return;
       // p_seen: the database refuses the action if the application changed after this screen loaded it.
       const r = await rpc('admin_verification_action', { p_id: v.id, p_action: d.x, p_note: note.trim(), p_seen: v.updated_at });
       await Promise.all([loadApps(), loadVerified()]); S.busy = false; c.render(); if (!r.error) toast(t('o_done'));
@@ -216,7 +295,7 @@ ${adminActs(v, s)}
     }),
   };
   // Admin-only actions are also blocked here (and always by the database).
-  ['vfilt', 'vphotos', 'vadm', 'vsettings'].forEach((k) => { const f = A[k]; A[k] = (...a) => (S.admin ? f(...a) : toast(t('noAdmin'))); });
+  ['vfilt', 'vphotos', 'vadm', 'vsettings', 'vview', 'vfraud', 'vhold', 'vlift', 'vretention'].forEach((k) => { const f = A[k]; A[k] = (...a) => (S.admin ? f(...a) : toast(t('noAdmin'))); });
 
   return { loadVerified, loadMine, loadApps, badge, view, accountCard, adminSection, actions: A, stopCam };
 }

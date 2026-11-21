@@ -438,9 +438,8 @@ const A = {
     if (!S.user) return;
     const mine = S.listings.filter((p) => p.owner == S.user.id), files = mine.flatMap((p) => [...p.ph.map((x) => x.id), p.video]).filter(Boolean);
     if (files.length) await sb.storage.from(BUCKET).remove(files);
-    if ((await rpc('withdraw_my_verifications', {})).error) return; // closes open applications so their private photos can be deleted
-    const vl = await sb.storage.from('verification-photos').list(S.user.id, { limit: 100 });
-    if (vl.data && vl.data.length) await sb.storage.from('verification-photos').remove(vl.data.map((x) => S.user.id + '/' + x.name));
+    // Verification records and photos are kept for their retention period and deleted automatically afterwards.
+    if ((await rpc('withdraw_my_verifications', {})).error) return;
     if ((await rpc('delete_my_account', {})).error) return;
     await sb.auth.signOut().catch(() => {});
     S.user = null; S.profile = null; S.admin = false; S.orders = []; S.cart = {}; save(); S.phone = '';

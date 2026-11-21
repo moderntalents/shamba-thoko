@@ -27,6 +27,7 @@ export const VTX = {
     vValid: 'Valid until {d}', vRenew: 'Renew verification', vRenewN: 'Renewal needs fresh details and new live photos.',
     vAdminNote: 'Message from Shamba Soko', vUpdate: 'Update my application', vAddPay: 'Send payment details', vPaySent: 'Payment details sent',
     vSuspN: 'Your verification is suspended. Contact support on 0747 859 353.',
+    vWait: 'Your verification was revoked. You can apply again from {d}.',
   },
   sw: {
     eTick: 'Majina hayawezi kuwa na alama ya tiki.', vBadge: 'Muuzaji aliyethibitishwa', vBadgeH: 'Muuzaji aliyethibitishwa',
@@ -55,5 +56,6 @@ export const VTX = {
     vValid: 'Halali hadi {d}', vRenew: 'Rudia uthibitisho', vRenewN: 'Kurudia kunahitaji taarifa mpya na picha mpya za moja kwa moja.',
     vAdminNote: 'Ujumbe kutoka Shamba Soko', vUpdate: 'Sasisha ombi langu', vAddPay: 'Tuma taarifa za malipo', vPaySent: 'Taarifa za malipo zimetumwa',
     vSuspN: 'Uthibitisho wako umesimamishwa. Wasiliana na msaada kwa 0747 859 353.',
+    vWait: 'Uthibitisho wako ulifutwa. Unaweza kuomba tena kuanzia {d}.',
   },
 };
