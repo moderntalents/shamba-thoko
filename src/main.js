@@ -1,8 +1,11 @@
 import './style.css';
 import { TX } from './tx.js';
 import { VTX } from './tx-verify.js';
+import { GTX } from './tx-grow.js';
+import { createGrow } from './grow.js';
 import { createVerify } from './verify.js';
 Object.assign(TX.en, VTX.en); Object.assign(TX.sw, VTX.sw);
+for (const l of ['en', 'sw']) { const { nkg, ...g } = GTX[l]; Object.assign(TX[l], g); TX[l].nk = { ...TX[l].nk, ...nkg }; }
 import { CATS, COUNTIES, TABS, EMO, PRICES, DOC, DEL, LEGAL } from './data.js';
 import { sb, BUCKET, mediaUrl, phoneEmail } from './supabase.js';
 
@@ -93,7 +96,7 @@ async function loadProfile() {
   S.profile = p.data || null;
   S.admin = !!a.data;
 }
-async function refreshAll() { await loadProfile(); await Promise.all([loadListings(), loadOrders(), loadAdmin(), VF.loadVerified(), VF.loadMine()]); }
+async function refreshAll() { await loadProfile(); await Promise.all([loadListings(), loadOrders(), loadAdmin(), VF.loadVerified(), VF.loadMine(), GR.loadPublic(), GR.loadMine(), GR.loadAdmin()]); }
 
 // ------------------------------------------------------------------ helpers
 const all = () => S.listings.filter((p) => !p.hidden);
@@ -122,7 +125,7 @@ function chrome() {
 function render() {
   if (S.tab == 'admin' && !isAdmin()) S.tab = 'shop';
   if (S.tab == 'orders' && !isSeller()) S.tab = 'shop';
-  if (S.tab == 'verify' && !isSeller()) S.tab = 'account';
+  if ((S.tab == 'verify' || S.tab == 'grow') && !isSeller()) S.tab = 'account';
   if (S.tab != 'verify') VF.stopCam();
   chrome();
   $('#view').innerHTML = V[S.tab]();
@@ -154,7 +157,7 @@ const mediaOf = (p) => {
   const c = l.find((x) => x.id == p.cv) || l[0];
   return `<button class="cvb" data-a="photos" data-id="${p.id}" aria-label="${esc(p.n)}: ${l.length} photo${l.length > 1 ? 's' : ''}"><img src="${esc(c.u)}" loading="lazy" alt="${esc(p.n)}, ${ptg(p)}"><span class="tag">${ptg(p)}</span>${l.length > 1 ? `<span class="cnt">📷 ${l.length}</span>` : ''}</button>`;
 };
-const cardHtml = (p) => `<div class="card">${mediaOf(p)}<div class="pn">${esc(p.n)}</div><div class="mut"><button class="lk sl" data-a="sinfo" data-id="${p.id}">${esc(p.s)}</button>${VF.badge(p.owner)}</div><div class="mut">📍 ${esc(p.y)}</div><div class="mut">${p.owner && S.user && p.owner == S.user.id ? t('yours') : t('dlist')}</div>${p.chem ? `<div class="warn">⚠ ${t('chem')}</div>` : ''}<div class="price">${KES(p.p)} <span class="mut">/ ${esc(p.u)}</span></div>${p.vu ? `<button class="btn out" data-a="video" data-id="${p.id}">▶ ${t('vid')}</button>` : ''}<button class="btn" data-a="add" data-id="${p.id}">${t('add')}</button><button class="btn out" data-a="contact" data-id="${p.id}">📞 ${t('contact')}</button>${VF.waBtn(p.owner, p.n)}<button class="lk" data-a="report" data-id="${p.id}">${t('rep')}</button></div>`;
+const cardHtml = (p) => `<div class="card${GR.isFeatured(p.id) ? ' feat' : ''}">${GR.isFeatured(p.id) ? `<div class="ftag">${t('gFeatured')}</div>` : ''}${mediaOf(p)}<div class="pn">${esc(p.n)}</div><div class="mut"><button class="lk sl" data-a="sinfo" data-id="${p.id}">${esc(p.s)}</button>${VF.badge(p.owner)}</div><div class="mut">📍 ${esc(p.y)}</div><div class="mut">${p.owner && S.user && p.owner == S.user.id ? t('yours') : t('dlist')}</div>${p.chem ? `<div class="warn">⚠ ${t('chem')}</div>` : ''}<div class="price">${KES(p.p)} <span class="mut">/ ${esc(p.u)}</span></div>${p.vu ? `<button class="btn out" data-a="video" data-id="${p.id}">▶ ${t('vid')}</button>` : ''}<button class="btn" data-a="add" data-id="${p.id}">${t('add')}</button><button class="btn out" data-a="contact" data-id="${p.id}">📞 ${t('contact')}</button>${VF.waBtn(p.owner, p.n)}<button class="lk" data-a="report" data-id="${p.id}">${t('rep')}</button></div>`;
 const gal = (p, i) => {
   const l = p.prev || p.ph, c = l[i], pt = t('pts');
   return `<div class="gv"><h2>${esc(p.n)}</h2><img class="main" src="${esc(c.u)}" alt="${esc(p.n)}, photo ${i + 1} of ${l.length}, ${ptg(p)}"><div class="mut" style="margin:6px 0"><b>${ptg(p)}</b> · ${pt[c.k] || ''} · ${i + 1}/${l.length}</div><div class="th">${l.map((x, j) => `<button data-a="gal" data-i="${j}" aria-current="${j == i}" aria-label="Photo ${j + 1}"><img src="${esc(x.u)}" alt="" style="width:100%;height:100%;object-fit:cover"></button>`).join('')}</div><div class="note">${t('unv')}</div>${p.prev ? '' : `<label class="f" for="rr">${t('rwhy')}</label><select id="rr">${t('rs').map((x, j) => `<option value="${j}">${x}</option>`).join('')}</select><button class="btn out" data-a="rphoto" data-i="${i}">${t('rph')}</button>`}</div>`;
@@ -165,6 +168,8 @@ const photoCard = () => { const f = S.f, pt = t('pts'); return `<div class="card
 function fill() {
   const q = S.q.toLowerCase();
   const l = all().filter((p) => (S.cat == 'all' || p.c == S.cat) && (S.cty == 'All' || p.y == S.cty) && (!q || (p.n + ' ' + p.s).toLowerCase().includes(q)));
+  l.sort((a, b) => GR.isFeatured(b.id) - GR.isFeatured(a.id)); // paid, approved Featured products first (stable sort keeps the rest in order)
+  const top = $('#ptop'); if (top) top.innerHTML = q || S.cat != 'all' || S.cty != 'All' ? '' : GR.shopTop();
   $('#list').innerHTML = !S.loaded ? `<p class="mut">…</p>` : l.length ? l.map(cardHtml).join('') : `<p class="mut">${t('none')}</p>`;
 }
 const opts = (a, sel, fn) => a.map((x) => `<option value="${esc(x)}" ${x == sel ? 'selected' : ''}>${fn ? fn(x) : esc(x)}</option>`).join('');
@@ -212,7 +217,7 @@ function sellGate() {
   return `<h2>${t('sellH')}</h2><div class="card gate"><div class="em" aria-hidden="true">🧺</div><p>${t('gateB')}</p><button class="btn" data-a="acct">${t('become')}</button></div>`;
 }
 const V = {
-  shop: () => `<input type="search" placeholder="${t('search')}" value="${esc(S.q)}" data-m="q" data-r="fill" aria-label="${t('search')}"><select data-m="cty" data-r="fill" aria-label="${t('county')}">${opts(COUNTIES, S.cty, (c) => (c == 'All' ? t('all') : esc(c)))}</select><div class="chips" role="group">${CATS.map((c) => `<button class="chip" aria-pressed="${c == S.cat}" data-a="cat" data-v="${c}">${t(c)}</button>`).join('')}</div><div class="grid" id="list"></div>`,
+  shop: () => `<input type="search" placeholder="${t('search')}" value="${esc(S.q)}" data-m="q" data-r="fill" aria-label="${t('search')}"><select data-m="cty" data-r="fill" aria-label="${t('county')}">${opts(COUNTIES, S.cty, (c) => (c == 'All' ? t('all') : esc(c)))}</select><div class="chips" role="group">${CATS.map((c) => `<button class="chip" aria-pressed="${c == S.cat}" data-a="cat" data-v="${c}">${t(c)}</button>`).join('')}</div><div id="ptop"></div><div class="grid" id="list"></div>`,
   prices: () => `<h2>${t('pricesH')}</h2><div class="card">${PRICES.map((r) => `<div class="tr"><div><div class="pn">${r[0]}</div><div class="mut">${r[1]}</div></div><div style="text-align:right"><div class="pn">${KES(r[2])}</div><div class="${r[3] >= 0 ? 'up' : 'dn'}">${r[3] > 0 ? '▲' : r[3] < 0 ? '▼' : '●'} ${Math.abs(r[3])}%</div></div></div>`).join('')}</div><div class="note">${t('pricesN')}</div>`,
   doctor: () => { const d = DOC[S.crop]; return `<h2>${t('docH')}</h2><p class="mut">${t('docP')}</p><div class="chips" role="group">${Object.keys(DOC).map((k) => `<button class="chip" aria-pressed="${k == S.crop}" data-a="crop" data-v="${esc(k)}">${k}</button>`).join('')}</div>${d.map((s, i) => `<button class="opt" aria-pressed="${S.sym === i}" data-a="sym" data-v="${i}">${s[0]}</button>`).join('')}${S.sym !== null ? `<div class="card"><div class="pn">${d[S.sym][1]}</div><p>${d[S.sym][2]}</p><button class="btn" data-a="find">${t('find')}</button></div>` : ''}<div class="note" role="note">⚠ ${t('docS')}</div>`; },
   sell: () => { const g = sellGate(); if (g) return g; const f = S.f; return `<h2>${t('sellH')}</h2><label class="f" for="sn">${t('iname')}</label><input type="text" id="sn" maxlength="40" value="${esc(f.n)}" data-m="f.n"><div class="row"><div><label class="f" for="sc">${t('category')}</label><select id="sc" data-m="f.c" data-r="render">${opts(CATS.slice(1), f.c, (c) => t(c))}</select></div><div><label class="f" for="sy">${t('county')}</label><select id="sy" data-m="f.y">${opts(COUNTIES.slice(1), f.y)}</select></div></div><div class="row"><div><label class="f" for="sp">${t('price')}</label><input type="number" id="sp" inputmode="numeric" min="1" max="1000000" value="${esc(f.p)}" data-m="f.p"></div><div><label class="f" for="su">${t('unit')}</label><input type="text" id="su" maxlength="15" value="${esc(f.u)}" data-m="f.u"></div></div>${f.c == 'input' ? `<label class="ck"><input type="checkbox" data-m="f.ok" ${f.ok ? 'checked' : ''}><span>${t('agro')}</span></label>` : ''}${photoCard()}<div class="card"><label class="f" for="sv">🎥 ${t('vh')}</label><input type="file" id="sv" accept="video/mp4,video/webm,video/quicktime" data-a-change="pv"><video id="vp" controls playsinline ${f.file ? `src="${f.file}"` : ''} style="width:100%;border-radius:10px;display:${f.file ? 'block' : 'none'}"></video></div><button class="btn out" data-a="preview">${t('prev')}</button><button class="btn sun" data-a="list" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : t('publish')}</button><div class="note">${t('sellN')}</div>`; },
@@ -237,7 +242,7 @@ const V = {
 <h2 style="margin-top:18px">Reports</h2>${S.reports.length ? S.reports.map((r) => `<div class="card"><div class="pn">${esc(r.name)}</div><div class="mut">${r.kind} report${r.why ? ' · ' + esc(r.why) : ''} · ${fT(r.created_at)}</div>${r.kind == 'photo' ? `<img src="${esc(mediaUrl(r.photo))}" alt="Reported photo" class="thm"><button class="btn" data-a="rph" data-id="${r.id}">Remove photo</button>` : ''}${r.kind != 'order' ? `<button class="btn" data-a="rhide" data-id="${r.id}">Hide listing</button>` : ''}<button class="btn out" data-a="rdis" data-id="${r.id}">Dismiss</button></div>`).join('') : '<p class="mut">No open reports.</p>'}
 <h2 style="margin-top:18px">All listings</h2><div class="card">${L.length ? L.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${esc(p.s)} · ${esc(p.y)} · ${KES(p.p)}${p.chem ? ' · ⚠ agrochemical' : ''}${p.ph.length ? ' · 📷 ' + p.ph.length : ''}${p.hidden ? ' · hidden' : ''}</div></div><button class="chip" data-a="${p.hidden ? 'unhide' : 'hide'}" data-id="${p.id}">${p.hidden ? 'Unhide' : 'Hide'}</button></div>`).join('') : '<p class="mut">No listings yet.</p>'}</div>
 <h2 style="margin-top:18px">Accounts</h2>${S.accounts.length ? `<div class="card">${S.accounts.map((a) => `<div class="tr"><div><div class="pn">${esc(a.name)} <span class="badge">${a.role}</span></div><div class="mut">${maskPh(a.phone)} · ${esc(a.county)}${a.biz ? ' · ' + esc(a.biz) : ''}</div></div></div>`).join('')}</div>` : '<p class="mut">No accounts yet.</p>'}
-${VF.adminSection()}
+${VF.adminSection()}${GR.adminSection()}
 <h2 style="margin-top:18px">Orders (${S.orders.length})</h2>${ofChips(S.orders)}${(() => { const l = fOrders(S.orders); return l.length ? l.map((o) => orderCard(o, 'a')).join('') : `<p class="mut">${t('o_none2')}</p>`; })()}
 <button class="btn out" data-a="tab" data-v="shop">← Back to shop</button>`;
   },
@@ -250,7 +255,7 @@ ${VF.adminSection()}
     const mine = S.listings.filter((p) => p.owner == m.id), so = S.orders.filter((o) => o.sl == m.id), bo = S.orders.filter((o) => o.b == m.id);
     return `<h2>${t('acct')}</h2><div class="card"><div class="pn">${esc(m.name)}${VF.badge(m.id)} <span class="badge">${t(m.role)}</span>${isAdmin() ? ` <span class="badge">${t('admin')}</span>` : ''}</div>${m.biz ? `<div class="mut">🏪 ${esc(m.biz)}</div>` : ''}<div class="mut">📞 ${showPh(m.phone)}</div><div class="mut">📍 ${esc(m.county)}</div><div class="mut">${t('since')} ${new Date(m.created_at).toLocaleDateString('en-KE')}</div></div>${isAdmin() ? `<button class="btn sun" data-a="admin">🛡️ ${t('adminD')}</button>` : ''}` +
       (m.role == 'buyer' ? `<div class="card"><div class="pn">${t('become')}</div><p class="mut">${t('becomeN')}</p><label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz"><button class="btn sun" data-a="become">${t('become')}</button></div>` :
-        `${VF.notesCard()}${VF.accountCard()}${VF.waCard()}<h2 style="margin-top:18px">${t('myl')}</h2><div class="card">${mine.length ? mine.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}${p.hidden ? ' · ' + t('hid') : ''}</div></div><button class="chip" data-a="rml" data-id="${p.id}">${t('prm')}</button></div>`).join('') : `<p class="mut">${t('nol')}</p>`}<button class="btn" data-a="tab" data-v="sell">➕ ${t('sellH')}</button></div><h2 style="margin-top:18px">${t('soldH')}</h2><button class="btn out" data-a="tab" data-v="orders">📋 ${t('orders')} (${so.length})</button>`) +
+        `${VF.notesCard()}${GR.accountButton()}${VF.accountCard()}${VF.waCard()}<h2 style="margin-top:18px">${t('myl')}</h2><div class="card">${mine.length ? mine.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}${p.hidden ? ' · ' + t('hid') : ''}</div></div><button class="chip" data-a="rml" data-id="${p.id}">${t('prm')}</button></div>`).join('') : `<p class="mut">${t('nol')}</p>`}<button class="btn" data-a="tab" data-v="sell">➕ ${t('sellH')}</button></div><h2 style="margin-top:18px">${t('soldH')}</h2><button class="btn out" data-a="tab" data-v="orders">📋 ${t('orders')} (${so.length})</button>`) +
       `<h2 style="margin-top:18px">${t('ord')}</h2>${bo.length ? `<button class="btn out" data-a="tab" data-v="cart">${t('ord')} (${bo.length}) →</button>` : `<p class="mut">${t('noord')}</p>`}<button class="btn out" data-a="logout" style="margin-top:14px">${t('logout')}</button><button class="lk" data-a="delacc">${t('del')}</button><div class="note">${t('accN')}</div>`;
   },
 };
@@ -281,7 +286,7 @@ const VF = createVerify({ S, t, esc, KES, sb, toast, dlgOpen, rpc, guarded, errM
 
 // ------------------------------------------------------------------ actions
 const A = {
-  tab: (d) => { S.pend = null; if (d.v == 'cart' && !me()) return needLogin('cart'); if (d.v == 'orders') S.of = 'all'; S.tab = d.v; render(); scrollTo(0, 0); if (['cart', 'orders', 'admin', 'account'].includes(d.v)) reloadOrders(); },
+  tab: (d) => { S.pend = null; if (d.v == 'cart' && !me()) return needLogin('cart'); if (d.v == 'orders') S.of = 'all'; S.tab = d.v; render(); scrollTo(0, 0); if (['cart', 'orders', 'admin', 'account', 'grow'].includes(d.v)) reloadOrders(); },
   cat: (d) => { S.cat = d.v; render(); },
   add: (d) => {
     const pp = findL(d.id); if (!pp || pp.hidden) return toast(t('pvonly'));
@@ -458,12 +463,16 @@ const A = {
 };
 V.verify = () => VF.view();
 Object.assign(A, VF.actions);
+// ------------------------------------------------------------------ grow your business (optional paid promotions)
+const GR = createGrow({ S, t, esc, KES, sb, toast, rpc, guarded, VF, V, fT: fTx, render: () => render() });
+V.grow = () => GR.view();
+Object.assign(A, GR.actions);
 ['admin', 'rdis', 'rhide', 'hide', 'unhide', 'rph'].forEach((k) => { const f = A[k]; A[k] = (...a) => (isAdmin() ? f(...a) : toast(t('noAdmin'))); });
 
 async function reloadOrders() {
   const a = document.activeElement;
-  await Promise.all([loadOrders(), loadAdmin()]);
-  if (['orders', 'account', 'cart', 'admin'].includes(S.tab) && !(a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) && !$('#dlg').open) render(); else chrome();
+  await Promise.all([loadOrders(), loadAdmin(), VF.loadMine(), GR.loadMine(), GR.loadAdmin()]);
+  if (['orders', 'account', 'cart', 'admin', 'grow'].includes(S.tab) && !(a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) && !$('#dlg').open) render(); else chrome();
 }
 
 document.addEventListener('keydown', (e) => { const el = e.target; if (e.key == 'Enter' && el.tagName == 'INPUT' && el.type != 'checkbox' && el.closest('#authf')) { e.preventDefault(); A.auth(); } });
@@ -472,7 +481,7 @@ document.addEventListener('input', (e) => {
   const el = e.target;
   if (el.dataset.aChange) { A[el.dataset.aChange](el); return; }
   if (!el.dataset.m) return;
-  const k = el.dataset.m.split('.'), o = k.length > 1 ? S[k[0]] : S; o[k[k.length - 1]] = el.type == 'checkbox' ? el.checked : el.value;
+  const k = el.dataset.m.split('.'), o = k.slice(0, -1).reduce((x, y) => x[y], S); o[k[k.length - 1]] = el.type == 'checkbox' ? el.checked : el.value;
   if (el.dataset.r == 'fill') fill(); else if (el.dataset.r == 'render') render();
   else if (el.dataset.r == 'vacc') { const x = $('#vpbacc'); if (x) x.textContent = el.value.trim() || S.vset.accRule; } // M-Pesa account = seller's full name
 });
@@ -486,7 +495,7 @@ function subscribe() {
   channel = sb.channel('orders-' + S.user.id).on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => reloadOrders()).subscribe();
 }
 sb.auth.onAuthStateChange((ev) => { if (ev == 'SIGNED_IN' || ev == 'SIGNED_OUT') setTimeout(subscribe, 0); });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { Promise.all([loadListings(), VF.loadVerified()]).then(() => { if (S.tab == 'shop') fill(); }); if (S.user) reloadOrders(); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { Promise.all([loadListings(), VF.loadVerified(), GR.loadPublic()]).then(() => { if (S.tab == 'shop') fill(); }); if (S.user) reloadOrders(); } });
 
 render();
 refreshAll().then(() => { if (S.profile) { S.phone = showPh(S.profile.phone); S.f.y = S.profile.county; } subscribe(); render(); });

@@ -88,3 +88,10 @@ h2 .vb{width:24px;height:24px;font-size:14px}
 .btn.wa{display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;background:#25D366;color:#0b2e16;border:0}
 .btn.wa.out{background:transparent;color:#128C3E;border:1px solid #25D366}
 .lk.sl{font-size:13px;min-height:24px;color:var(--mut)}
+/* Grow your business: promotions are clearly labelled so buyers can tell paid placement apart */
+.card.feat{border:2px solid var(--sun)}
+.ftag{display:inline-block;align-self:flex-start;background:var(--sun);color:#222;font-size:12px;font-weight:700;border-radius:10px;padding:1px 10px;margin-bottom:6px}
+.card.ad{border:1px dashed var(--g);background:var(--gl);margin-bottom:10px}
+.adl{font-size:11px;font-weight:700;color:var(--g);margin-bottom:2px}
+.pshops{margin-bottom:6px}.pshops .mut{font-weight:700;font-size:13px}
+.gsv .price{margin:2px 0 4px}

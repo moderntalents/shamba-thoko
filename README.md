@@ -80,3 +80,20 @@ select id from public.profiles where phone = '2547XXXXXXXX';
 - The button uses the official click-to-chat link `https://wa.me/<number>?text=<message>`.
 - Only the seller's id and WhatsApp number are public (`seller_whatsapp()`); no ID or verification data.
 - Sellers without WhatsApp keep the normal phone contact.
+
+## Grow your business (optional paid services)
+
+Sellers open **Account → Grow your business**. Four optional services:
+
+| Service | Default price | Duration | Checks |
+|---|---|---|---|
+| Featured product | KSh 100 | 7 days | the seller's own visible listing |
+| Sponsored advert | KSh 2,000 | 30 days | headline and text, no links or phone numbers |
+| Promoted shop | KSh 500 | 30 days | seller has at least one listing |
+| Verified Seller blue tick | KSh 500 | 12 months | full identity verification (existing flow, unchanged) |
+
+- **Flow:** seller sends a request → admin approves → seller pays by **M-Pesa Paybill 1315388**, account number = payer's full name → seller enters the transaction code → admin checks the statement and confirms → the service starts. Nothing is shown publicly before approval **and** payment confirmation (enforced in the database).
+- Featured listings show first with a "⭐ Featured" label; sponsored adverts appear at the top of the shop marked "Sponsored"; promoted shops appear in a "Promoted shops" row. Promotions end automatically; approvals not paid within 14 days are cancelled. Sellers get in-app notifications at each step.
+- **Admin dashboard → Grow your business:** requests by status, approve/reject, confirm or reject payments, end a promotion early, edit prices, durations and availability (changes apply to new requests only, audited), and revenue from confirmed payments (by service, this month and all time, including verification fees).
+- Registration, listings and buying stay free. No commissions, no subscriptions: buyers and sellers deal directly.
+- Database: `supabase/migrations/20261122000000_grow_your_business.sql`, schedule `20261122000100_grow_schedule.sql`.

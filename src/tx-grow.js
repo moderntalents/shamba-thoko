@@ -1,0 +1,33 @@
+// Texts for "Grow your business" (optional paid promotions), English and Kiswahili.
+export const GTX = {
+  en: {
+    grow: 'Grow', gH: 'Grow your business', gIntro: 'Optional paid services to help buyers find you. Selling, buying and listing stay free. Shamba Soko takes no commission: buyers and sellers deal with each other directly.',
+    gHow: 'How it works: 1. Send a request. 2. Shamba Soko checks it. 3. When approved, pay by M-Pesa and enter the transaction code. 4. We confirm the payment and your promotion starts. Nothing starts before approval and payment confirmation.',
+    gSvc: { featured: 'Featured product', sponsored: 'Sponsored advert', promoted_shop: 'Promoted shop' },
+    gIcon: { featured: '⭐', sponsored: '📣', promoted_shop: '🏪' },
+    gDesc: { featured: 'One of your listings shows first in the shop with a Featured label.', sponsored: 'A short advert at the top of the shop, marked Sponsored.', promoted_shop: 'Your shop appears in the Promoted shops row at the top of the shop.', verified: 'A blue tick beside your name after Shamba Soko checks your ID, photos and business. Uses the existing verification application.' },
+    gDays: 'days', gMonths: 'months', gListing: 'Listing to feature', gChoose: 'Choose a listing', gNeedListing: 'Add a listing first.',
+    gHeadline: 'Headline (3 to 60 characters)', gAdText: 'Advert text (10 to 200 characters, no links or phone numbers)', gAdListing: 'Link to one of your listings (optional)', gTagline: 'Short description of your shop (optional)',
+    gRequest: 'Send request', gSent: 'Request sent. Shamba Soko will review it.', gMine: 'My promotion requests', gNone: 'No requests yet.',
+    gSt: { submitted: 'Waiting for approval', approved: 'Approved: pay now', payment_submitted: 'Payment being checked', active: 'Active', expired: 'Finished', rejected: 'Not approved', cancelled: 'Cancelled', ended: 'Ended' },
+    gWaitApproval: 'Do not pay yet. You can pay after Shamba Soko approves the request.', gWaitPayment: 'Shamba Soko is checking your payment', gActiveUntil: 'Running until',
+    gAmount: 'Amount', gPayer: 'Full name of the person paying (use this as the account number)', gYourName: 'Your full name', gSendCode: 'Send payment code', gPayNote: 'Your promotion starts only after Shamba Soko confirms the payment. Never share your M-Pesa PIN.', gPayerBad: 'Enter the payer’s full name',
+    gCancel: 'Cancel request', gSponsored: 'Sponsored', gFeatured: '⭐ Featured', gPromotedShops: 'Promoted shops', gView: 'View listing',
+    nkg: { promo_approved: 'Your promotion request was approved. Pay by M-Pesa and enter the code in Grow your business.', promo_rejected: 'Your promotion request was not approved. See the note in Grow your business.', promo_active: 'Payment confirmed. Your promotion is now live.', promo_payment_rejected: 'We could not confirm your promotion payment. Check the note and send the correct code.', promo_ended: 'Your promotion was ended by Shamba Soko. See the note in Grow your business.', promo_expired: 'Your promotion has finished.', promo_unpaid_cancelled: 'Your approved promotion request was cancelled because it was not paid within 14 days.' },
+  },
+  sw: {
+    grow: 'Kuza', gH: 'Kuza biashara yako', gIntro: 'Huduma za kulipia za hiari zinazosaidia wanunuzi kukupata. Kuuza, kununua na kuweka matangazo kunabaki bure. Shamba Soko haichukui kamisheni: wanunuzi na wauzaji wanashughulika moja kwa moja.',
+    gHow: 'Jinsi inavyofanya kazi: 1. Tuma ombi. 2. Shamba Soko inalikagua. 3. Likiidhinishwa, lipa kwa M-Pesa na uweke nambari ya muamala. 4. Tunathibitisha malipo na tangazo lako linaanza. Hakuna kinachoanza kabla ya idhini na uthibitisho wa malipo.',
+    gSvc: { featured: 'Bidhaa maalum', sponsored: 'Tangazo la kulipiwa', promoted_shop: 'Duka linalotangazwa' },
+    gIcon: { featured: '⭐', sponsored: '📣', promoted_shop: '🏪' },
+    gDesc: { featured: 'Moja ya bidhaa zako inaonekana kwanza dukani ikiwa na alama ya Maalum.', sponsored: 'Tangazo fupi juu ya duka, lenye alama ya Limelipiwa.', promoted_shop: 'Duka lako linaonekana kwenye safu ya Maduka yanayotangazwa juu ya duka.', verified: 'Alama ya bluu kando ya jina lako baada ya Shamba Soko kukagua kitambulisho, picha na biashara yako. Inatumia ombi la uthibitisho lililopo.' },
+    gDays: 'siku', gMonths: 'miezi', gListing: 'Bidhaa ya kuonyesha', gChoose: 'Chagua bidhaa', gNeedListing: 'Weka bidhaa kwanza.',
+    gHeadline: 'Kichwa (herufi 3 hadi 60)', gAdText: 'Maandishi ya tangazo (herufi 10 hadi 200, bila viungo wala namba za simu)', gAdListing: 'Unganisha na bidhaa yako moja (hiari)', gTagline: 'Maelezo mafupi ya duka lako (hiari)',
+    gRequest: 'Tuma ombi', gSent: 'Ombi limetumwa. Shamba Soko italikagua.', gMine: 'Maombi yangu ya matangazo', gNone: 'Bado hakuna maombi.',
+    gSt: { submitted: 'Linasubiri idhini', approved: 'Limeidhinishwa: lipa sasa', payment_submitted: 'Malipo yanakaguliwa', active: 'Linaendelea', expired: 'Limekwisha', rejected: 'Halikuidhinishwa', cancelled: 'Limeghairiwa', ended: 'Limesitishwa' },
+    gWaitApproval: 'Usilipe bado. Unaweza kulipa baada ya Shamba Soko kuidhinisha ombi.', gWaitPayment: 'Shamba Soko inakagua malipo yako', gActiveUntil: 'Linaendelea hadi',
+    gAmount: 'Kiasi', gPayer: 'Jina kamili la anayelipa (tumia kama namba ya akaunti)', gYourName: 'Jina lako kamili', gSendCode: 'Tuma nambari ya malipo', gPayNote: 'Tangazo lako linaanza tu baada ya Shamba Soko kuthibitisha malipo. Usitoe PIN yako ya M-Pesa.', gPayerBad: 'Weka jina kamili la anayelipa',
+    gCancel: 'Ghairi ombi', gSponsored: 'Limelipiwa', gFeatured: '⭐ Maalum', gPromotedShops: 'Maduka yanayotangazwa', gView: 'Tazama bidhaa',
+    nkg: { promo_approved: 'Ombi lako la tangazo limeidhinishwa. Lipa kwa M-Pesa na uweke nambari katika Kuza biashara yako.', promo_rejected: 'Ombi lako la tangazo halikuidhinishwa. Tazama ujumbe katika Kuza biashara yako.', promo_active: 'Malipo yamethibitishwa. Tangazo lako linaendelea sasa.', promo_payment_rejected: 'Hatukuweza kuthibitisha malipo ya tangazo. Tazama ujumbe na utume nambari sahihi.', promo_ended: 'Tangazo lako limesitishwa na Shamba Soko. Tazama ujumbe katika Kuza biashara yako.', promo_expired: 'Tangazo lako limekwisha.', promo_unpaid_cancelled: 'Ombi lako lililoidhinishwa limeghairiwa kwa sababu halikulipiwa ndani ya siku 14.' },
+  },
+};
