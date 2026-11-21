@@ -14,7 +14,7 @@ phH:'Photos (optional)',phN:'Add up to 6 real photos of your product, farm, shop
 su:'Seller uploaded',unv:'Shamba Soko has not verified this photo or the product. Check the goods when you receive them.',cover:'Cover',mkcover:'Make cover',prm:'Remove',pts:{product:'Product',farm:'Farm',shop:'Shop',stock:'Stock',packaging:'Packaging',seller:'Me with product'},
 pmax:'You can add up to 6 photos',pbad:'Some files were skipped. Use real JPG, PNG or WebP photos under 8 MB.',pfail:'Could not upload photos. Please try again.',pvh:'Preview',pvn:'This is how buyers will see your listing. Nothing is posted yet.',prev:'Preview listing',pvonly:'Preview only',
 rwhy:'Why are you reporting this photo?',rs:['Fake or stolen photo','Misleading: not the product being sold','Inappropriate or offensive','Shows private information','Other'],rph:'Report this photo',
-acct:'Account',login:'Log in',signup:'Create account',logout:'Log out',iam:'I want to join as a',roleB:'🧺 Buyer: shop and order goods',roleS:'🌱 Seller: list my goods (you can also buy)',buyer:'Buyer',seller:'Seller',
+acct:'Account',lsu:'Log in / Sign up',login:'Log in',signup:'Create account',logout:'Log out',iam:'I want to join as a',roleB:'🧺 Buyer: shop and order goods',roleS:'🌱 Seller: list my goods (you can also buy)',buyer:'Buyer',seller:'Seller',
 fname:'Full name',biz:'Farm or business name (shown on your listings)',lphone:'Phone number, e.g. 0712345678',pw:'Password (at least 8 characters)',pw2:'Repeat password',pwl:'Password',show:'Show password',
 haveacc:'Already have an account? Log in',noacc:'New here? Create an account',forgot:'Forgot password?',forgotN:'To reset your password, contact Shamba Soko support from the phone number on your account: call or WhatsApp 0747 859 353.',
 
@@ -39,7 +39,7 @@ phH:'Picha (hiari)',phN:'Weka hadi picha 6 halisi za bidhaa, shamba, duka, akiba
 su:'Imepakiwa na muuzaji',unv:'Shamba Soko haijathibitisha picha hii wala bidhaa. Kagua bidhaa unapopokea.',cover:'Kava',mkcover:'Fanya kava',prm:'Ondoa',pts:{product:'Bidhaa',farm:'Shamba',shop:'Duka',stock:'Akiba',packaging:'Vifungashio',seller:'Mimi na bidhaa'},
 pmax:'Unaweza kuweka hadi picha 6',pbad:'Faili zingine zimerukwa. Tumia picha halisi za JPG, PNG au WebP chini ya MB 8.',pfail:'Picha hazikupakiwa. Tafadhali jaribu tena.',pvh:'Hakiki',pvn:'Hivi ndivyo wanunuzi wataona tangazo lako. Bado halijachapishwa.',prev:'Hakiki tangazo',pvonly:'Hakiki tu',
 rwhy:'Kwa nini unaripoti picha hii?',rs:['Picha bandia au iliyoibwa','Inapotosha: si bidhaa inayouzwa','Haifai au inaudhi','Ina taarifa binafsi','Nyingine'],rph:'Ripoti picha hii',
-acct:'Akaunti',login:'Ingia',signup:'Fungua akaunti',logout:'Toka',iam:'Nataka kujiunga kama',roleB:'🧺 Mnunuzi: nunua na agiza bidhaa',roleS:'🌱 Muuzaji: weka bidhaa zangu (unaweza pia kununua)',buyer:'Mnunuzi',seller:'Muuzaji',
+acct:'Akaunti',lsu:'Ingia / Jisajili',login:'Ingia',signup:'Fungua akaunti',logout:'Toka',iam:'Nataka kujiunga kama',roleB:'🧺 Mnunuzi: nunua na agiza bidhaa',roleS:'🌱 Muuzaji: weka bidhaa zangu (unaweza pia kununua)',buyer:'Mnunuzi',seller:'Muuzaji',
 fname:'Jina kamili',biz:'Jina la shamba au biashara (linaonekana kwenye matangazo yako)',lphone:'Namba ya simu, mf. 0712345678',pw:'Nenosiri (angalau herufi 8)',pw2:'Rudia nenosiri',pwl:'Nenosiri',show:'Onyesha nenosiri',
 haveacc:'Una akaunti tayari? Ingia',noacc:'Mgeni hapa? Fungua akaunti',forgot:'Umesahau nenosiri?',forgotN:'Ili kubadilisha nenosiri, wasiliana na Shamba Soko kutoka kwa namba ya akaunti yako: piga au WhatsApp 0747 859 353.',
 
