@@ -97,3 +97,12 @@ Sellers open **Account → Grow your business**. Four optional services:
 - **Admin dashboard → Grow your business:** requests by status, approve/reject, confirm or reject payments, end a promotion early, edit prices, durations and availability (changes apply to new requests only, audited), and revenue from confirmed payments (by service, this month and all time, including verification fees).
 - Registration, listings and buying stay free. No commissions, no subscriptions: buyers and sellers deal directly.
 - Database: `supabase/migrations/20261122000000_grow_your_business.sql`, schedule `20261122000100_grow_schedule.sql`.
+
+## Riders and delivery requests
+
+- **Delivery options per listing:** when listing (and later in **Account → My listings**) the seller chooses who can arrange a rider: the seller, the buyer, or both. At checkout the buyer picks one of the enabled options for each seller. This only says who arranges the rider. **No delivery fee is added**: buyer and seller agree directly who pays the rider, how much and how.
+- **Rider accounts (free):** sign up as a Rider. The **Rides** tab is the rider dashboard: availability on/off, vehicle and plate, where they wait, delivery counties, and delivery requests.
+- **Requesting a rider:** after the seller confirms an order, the person responsible (seller or buyer) taps **Request a rider**, filters available riders by county and sends a request with an optional note. Riders accept or decline. Statuses: Requested → Accepted → Collected → In transit → Delivered (or Cancelled / Declined). Phone numbers are shared only after the rider accepts. Buyer, seller and rider get in-app notifications at each step.
+- **Rider verification (optional, paid):** riders use the existing verification application, fee, M-Pesa Paybill confirmation and admin approval (photos: face front and side, vehicle with number plate, rider with vehicle). Verified riders get the blue tick.
+- **Admin:** Admin dashboard → Riders: see riders, availability, vehicle, areas, deliveries and verification; suspend (with a reason) or reinstate; see and cancel deliveries in progress. Rider applications appear in Seller verification marked "🛵 Rider".
+- Database: `supabase/migrations/20261123000000_riders.sql` (additive) and `20261123000100_riders_checkout.sql` (turns off the old fixed-fee checkout; apply together with the app release).

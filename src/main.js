@@ -3,9 +3,12 @@ import { TX } from './tx.js';
 import { VTX } from './tx-verify.js';
 import { GTX } from './tx-grow.js';
 import { createGrow } from './grow.js';
+import { RTX } from './tx-riders.js';
+import { createRiders } from './riders.js';
 import { createVerify } from './verify.js';
 Object.assign(TX.en, VTX.en); Object.assign(TX.sw, VTX.sw);
 for (const l of ['en', 'sw']) { const { nkg, ...g } = GTX[l]; Object.assign(TX[l], g); TX[l].nk = { ...TX[l].nk, ...nkg }; }
+for (const l of ['en', 'sw']) { const { nkr, ...r } = RTX[l]; Object.assign(TX[l], r); TX[l].nk = { ...TX[l].nk, ...nkr }; }
 import { CATS, COUNTIES, TABS, EMO, PRICES, DOC, DEL, LEGAL } from './data.js';
 import { sb, BUCKET, mediaUrl, phoneEmail } from './supabase.js';
 
@@ -51,7 +54,7 @@ const errMsg = (e) => {
 
 // ------------------------------------------------------------------ data
 const toListing = (r) => ({
-  id: r.id, n: r.name, c: r.category, p: r.price, u: r.unit, s: r.seller_name, y: r.county, e: EMO[r.category], chem: r.chem,
+  id: r.id, n: r.name, c: r.category, p: r.price, u: r.unit, s: r.seller_name, y: r.county, e: EMO[r.category], chem: r.chem, sr: r.seller_rider !== false, br: r.buyer_rider !== false,
   owner: r.owner, hidden: r.hidden, mine: 1, cv: r.cover || '', vu: r.video ? mediaUrl(r.video) : '', video: r.video,
   ph: (r.photos || []).map((x) => ({ id: x.path, u: mediaUrl(x.path), k: x.k })),
 });
@@ -96,7 +99,7 @@ async function loadProfile() {
   S.profile = p.data || null;
   S.admin = !!a.data;
 }
-async function refreshAll() { await loadProfile(); await Promise.all([loadListings(), loadOrders(), loadAdmin(), VF.loadVerified(), VF.loadMine(), GR.loadPublic(), GR.loadMine(), GR.loadAdmin()]); }
+async function refreshAll() { await loadProfile(); await Promise.all([loadListings(), loadOrders(), loadAdmin(), VF.loadVerified(), VF.loadMine(), GR.loadPublic(), GR.loadMine(), GR.loadAdmin(), RD.loadMine(), RD.loadAdmin()]); }
 
 // ------------------------------------------------------------------ helpers
 const all = () => S.listings.filter((p) => !p.hidden);
@@ -104,11 +107,12 @@ const cnt = () => Object.values(S.cart).reduce((a, b) => a + b, 0);
 function calc() {
   const it = Object.keys(S.cart).map((id) => [all().find((p) => p.id == id), S.cart[id]]).filter((x) => x[0]);
   const g = {}; it.forEach((x) => (g[x[0].owner] = g[x[0].owner] || []).push(x));
-  const sub = it.reduce((a, x) => a + x[0].p * x[1], 0), fee = DEL[S.dm][1] * Object.keys(g).length;
+  const sub = it.reduce((a, x) => a + x[0].p * x[1], 0), fee = 0; // no delivery fee: buyer and seller agree who pays the rider
   return { it, g, sub, fee };
 }
 const pendN = () => { const m = me(); return m ? S.orders.filter((o) => o.sl == m.id && o.st == 'placed').length : 0; };
-const navTabs = () => (isSeller() ? [...TABS.slice(0, 4), ['orders', '📋']] : TABS);
+const rideN = () => (S.user ? S.dels.filter((d) => d.rider == S.user.id && d.status == 'requested').length : 0);
+const navTabs = () => (isSeller() ? [...TABS.slice(0, 4), ['orders', '📋']] : RD.isRider() ? [...TABS.slice(0, 3), ['rides', '🛵']] : TABS);
 
 function chrome() {
   document.documentElement.lang = S.lang == 'sw' ? 'sw' : 'en';
@@ -122,12 +126,12 @@ function chrome() {
   b.textContent = m ? '👤 ' + m.name.split(' ')[0] + (pn ? ' · ' + pn : '') + (vn ? ' 🔔' + vn : '') : t('lsu');
   b.setAttribute('aria-label', m ? t('acct') + ': ' + m.name : t('lsu'));
   b.toggleAttribute('aria-current', S.tab == 'account');
-  $('#nav').innerHTML = navTabs().map(([k, i]) => `<button data-a="tab" data-v="${k}" ${k == S.tab ? 'aria-current="page"' : ''}><span aria-hidden="true">${i}</span>${t(k)}${k == 'cart' && cnt() ? `<b aria-label="${cnt()}">${cnt()}</b>` : k == 'orders' && pendN() ? `<b aria-label="${pendN()}">${pendN()}</b>` : ''}</button>`).join('');
+  $('#nav').innerHTML = navTabs().map(([k, i]) => `<button data-a="tab" data-v="${k}" ${k == S.tab ? 'aria-current="page"' : ''}><span aria-hidden="true">${i}</span>${t(k)}${k == 'cart' && cnt() ? `<b aria-label="${cnt()}">${cnt()}</b>` : k == 'orders' && pendN() ? `<b aria-label="${pendN()}">${pendN()}</b>` : k == 'rides' && rideN() ? `<b aria-label="${rideN()}">${rideN()}</b>` : ''}</button>`).join('');
 }
 function render() {
   if (S.tab == 'admin' && !isAdmin()) S.tab = 'shop';
   if (S.tab == 'orders' && !isSeller()) S.tab = 'shop';
-  if ((S.tab == 'verify' || S.tab == 'grow') && !isSeller()) S.tab = 'account';
+  if ((S.tab == 'verify' && !isSeller() && !RD.isRider()) || (S.tab == 'grow' && !isSeller()) || (S.tab == 'rides' && !RD.isRider())) S.tab = 'account';
   if (S.tab != 'verify') VF.stopCam();
   chrome();
   $('#view').innerHTML = V[S.tab]();
@@ -209,12 +213,13 @@ const orderCard = (o, v) => {
   if ((v == 's' || v == 'a') && o.bp) ct = callB(o.bp, o.bp);
   else if (v == 'b' && o.ct && g != 'cancelled') ct = `<button class="btn out" data-a="ocontact" data-id="${o.id}">📞 ${t('contact')}</button>`;
   const adm = v == 'a' ? `<label class="f" for="as-${o.id}">${t('o_as')}</label><select id="as-${o.id}">${OF.slice(1).map((k) => `<option value="${k}" ${g == k ? 'selected' : ''}>${t('sg')[k]}</option>`).join('')}</select><button class="btn out" data-a="oadm" data-id="${o.id}">${t('o_au')}</button>` : '';
-  return `<div class="card"><div class="tr" style="padding-top:0"><b>${esc(o.id)}</b><span>${KES(o.ct || o.t)}</span></div><div><span class="bd ${g}">${t('sg')[g]}</span><span class="pn">${stL(o)}</span></div><div class="mut">${who}</div>${lines}<div class="mut">${t('o_sub')} ${KES(o.sub || 0)} · ${t('dlv')} ${KES(o.fee || 0)}</div><div class="mut">${DEL[o.dm] ? DEL[o.dm][0] : ''}${o.a ? ' · 📍 ' + esc(o.a) : ''}</div>${lg[0] ? `<div class="mut">${t('o_date')}: ${fT(lg[0].at)}</div>` : ''}${idx != null ? `<div class="steps" aria-hidden="true">${[0, 1, 2, 3].map((i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('')}</div>` : ''}${last && last !== lg[0] ? `<div class="mut">↻ ${fT(last.at)}</div>` : ''}${o.ct ? `<div class="mut">${t('o_conf')}: ${KES(o.ct)}${o.ct != o.t ? ` (${t('o_est')}: ${KES(o.t)})` : ''}</div><div class="mut">${t('o_det')}: ${esc(o.cd)}</div>` : ''}${ct}${o.ct && idx >= 1 ? `<div class="note">${t('o_pn')}</div>` : ''}${v == 's' ? sActs(o) : v == 'b' ? bActs(o) : adm}${v == 'a' ? '' : `<button class="lk" data-a="odlg" data-id="${o.id}" data-r="${v}">${(o.disp || []).some((d) => d.by == v) ? t('o_dop') : t('o_rep')}</button>`}<details><summary>${t('o_hist')}</summary>${lg.map((e) => `<div class="tl">${fT(e.at)} · ${t('evt')[e.s == 'received' && e.by == 's' ? 'recS2' : e.s] || e.s} · ${t('o_by')[e.by]}${e.t ? ' · ' + KES(e.t) : ''}${e.to ? ' → ' + t('sg')[SG({ st: e.to })] : ''}</div>`).join('')}</details></div>`;
+  return `<div class="card"><div class="tr" style="padding-top:0"><b>${esc(o.id)}</b><span>${KES(o.ct || o.t)}</span></div><div><span class="bd ${g}">${t('sg')[g]}</span><span class="pn">${stL(o)}</span></div><div class="mut">${who}</div>${lines}${RD.orderLine(o) ? `<div class="mut">${t('o_sub')} ${KES(o.sub || 0)}</div>${RD.orderLine(o)}${o.a ? `<div class="mut">📍 ${esc(o.a)}</div>` : ''}` : `<div class="mut">${t('o_sub')} ${KES(o.sub || 0)} · ${t('dlv')} ${KES(o.fee || 0)}</div><div class="mut">${DEL[o.dm] ? DEL[o.dm][0] : ''}${o.a ? ' · 📍 ' + esc(o.a) : ''}</div>`}${lg[0] ? `<div class="mut">${t('o_date')}: ${fT(lg[0].at)}</div>` : ''}${idx != null ? `<div class="steps" aria-hidden="true">${[0, 1, 2, 3].map((i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('')}</div>` : ''}${last && last !== lg[0] ? `<div class="mut">↻ ${fT(last.at)}</div>` : ''}${o.ct ? `<div class="mut">${t('o_conf')}: ${KES(o.ct)}${o.ct != o.t ? ` (${t('o_est')}: ${KES(o.t)})` : ''}</div><div class="mut">${t('o_det')}: ${esc(o.cd)}</div>` : ''}${ct}${o.ct && idx >= 1 ? `<div class="note">${t('o_pn')}</div>` : ''}${v == 's' ? sActs(o) : v == 'b' ? bActs(o) : adm}${RD.orderBlock(o, v)}${v == 'a' ? '' : `<button class="lk" data-a="odlg" data-id="${o.id}" data-r="${v}">${(o.disp || []).some((d) => d.by == v) ? t('o_dop') : t('o_rep')}</button>`}<details><summary>${t('o_hist')}</summary>${lg.map((e) => `<div class="tl">${fT(e.at)} · ${t('evt')[e.s == 'received' && e.by == 's' ? 'recS2' : e.s] || e.s} · ${t('o_by')[e.by]}${e.t ? ' · ' + KES(e.t) : ''}${e.to ? ' → ' + t('sg')[SG({ st: e.to })] : ''}</div>`).join('')}</details></div>`;
 };
 
 // ------------------------------------------------------------------ views
 function sellGate() {
   const m = me(); if (m && m.role == 'seller') return '';
+  if (m && m.role == 'rider') return `<h2>${t('sellH')}</h2><div class="card gate"><div class="em" aria-hidden="true">🛵</div><p>${t('rFree')}</p><button class="btn" data-a="tab" data-v="rides">${t('rOpenDash')}</button></div>`;
   if (!m) return `<h2>${t('sellH')}</h2><div class="card gate"><div class="em" aria-hidden="true">🔒</div><p>${t('gateS')}</p><button class="btn" data-a="goauth" data-v="login" data-n="sell">${t('login')}</button><button class="btn out" data-a="goauth" data-v="signup" data-n="sell" data-r="seller">${t('signup')}</button></div>`;
   return `<h2>${t('sellH')}</h2><div class="card gate"><div class="em" aria-hidden="true">🧺</div><p>${t('gateB')}</p><button class="btn" data-a="acct">${t('become')}</button></div>`;
 }
@@ -222,15 +227,15 @@ const V = {
   shop: () => `<input type="search" placeholder="${t('search')}" value="${esc(S.q)}" data-m="q" data-r="fill" aria-label="${t('search')}"><select data-m="cty" data-r="fill" aria-label="${t('county')}">${opts(COUNTIES, S.cty, (c) => (c == 'All' ? t('all') : esc(c)))}</select><div class="chips" role="group">${CATS.map((c) => `<button class="chip" aria-pressed="${c == S.cat}" data-a="cat" data-v="${c}">${t(c)}</button>`).join('')}</div><div id="ptop"></div><div class="grid" id="list"></div>`,
   prices: () => `<h2>${t('pricesH')}</h2><div class="card">${PRICES.map((r) => `<div class="tr"><div><div class="pn">${r[0]}</div><div class="mut">${r[1]}</div></div><div style="text-align:right"><div class="pn">${KES(r[2])}</div><div class="${r[3] >= 0 ? 'up' : 'dn'}">${r[3] > 0 ? '▲' : r[3] < 0 ? '▼' : '●'} ${Math.abs(r[3])}%</div></div></div>`).join('')}</div><div class="note">${t('pricesN')}</div>`,
   doctor: () => { const d = DOC[S.crop]; return `<h2>${t('docH')}</h2><p class="mut">${t('docP')}</p><div class="chips" role="group">${Object.keys(DOC).map((k) => `<button class="chip" aria-pressed="${k == S.crop}" data-a="crop" data-v="${esc(k)}">${k}</button>`).join('')}</div>${d.map((s, i) => `<button class="opt" aria-pressed="${S.sym === i}" data-a="sym" data-v="${i}">${s[0]}</button>`).join('')}${S.sym !== null ? `<div class="card"><div class="pn">${d[S.sym][1]}</div><p>${d[S.sym][2]}</p><button class="btn" data-a="find">${t('find')}</button></div>` : ''}<div class="note" role="note">⚠ ${t('docS')}</div>`; },
-  sell: () => { const g = sellGate(); if (g) return g; const f = S.f; return `<h2>${t('sellH')}</h2><label class="f" for="sn">${t('iname')}</label><input type="text" id="sn" maxlength="40" value="${esc(f.n)}" data-m="f.n"><div class="row"><div><label class="f" for="sc">${t('category')}</label><select id="sc" data-m="f.c" data-r="render">${opts(CATS.slice(1), f.c, (c) => t(c))}</select></div><div><label class="f" for="sy">${t('county')}</label><select id="sy" data-m="f.y">${opts(COUNTIES.slice(1), f.y)}</select></div></div><div class="row"><div><label class="f" for="sp">${t('price')}</label><input type="number" id="sp" inputmode="numeric" min="1" max="1000000" value="${esc(f.p)}" data-m="f.p"></div><div><label class="f" for="su">${t('unit')}</label><input type="text" id="su" maxlength="15" value="${esc(f.u)}" data-m="f.u"></div></div>${f.c == 'input' ? `<label class="ck"><input type="checkbox" data-m="f.ok" ${f.ok ? 'checked' : ''}><span>${t('agro')}</span></label>` : ''}${photoCard()}<div class="card"><label class="f" for="sv">🎥 ${t('vh')}</label><input type="file" id="sv" accept="video/mp4,video/webm,video/quicktime" data-a-change="pv"><video id="vp" controls playsinline ${f.file ? `src="${f.file}"` : ''} style="width:100%;border-radius:10px;display:${f.file ? 'block' : 'none'}"></video></div><button class="btn out" data-a="preview">${t('prev')}</button><button class="btn sun" data-a="list" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : t('publish')}</button><div class="note">${t('sellN')}</div>`; },
+  sell: () => { const g = sellGate(); if (g) return g; const f = S.f; return `<h2>${t('sellH')}</h2><label class="f" for="sn">${t('iname')}</label><input type="text" id="sn" maxlength="40" value="${esc(f.n)}" data-m="f.n"><div class="row"><div><label class="f" for="sc">${t('category')}</label><select id="sc" data-m="f.c" data-r="render">${opts(CATS.slice(1), f.c, (c) => t(c))}</select></div><div><label class="f" for="sy">${t('county')}</label><select id="sy" data-m="f.y">${opts(COUNTIES.slice(1), f.y)}</select></div></div><div class="row"><div><label class="f" for="sp">${t('price')}</label><input type="number" id="sp" inputmode="numeric" min="1" max="1000000" value="${esc(f.p)}" data-m="f.p"></div><div><label class="f" for="su">${t('unit')}</label><input type="text" id="su" maxlength="15" value="${esc(f.u)}" data-m="f.u"></div></div>${f.c == 'input' ? `<label class="ck"><input type="checkbox" data-m="f.ok" ${f.ok ? 'checked' : ''}><span>${t('agro')}</span></label>` : ''}${photoCard()}<div class="card"><label class="f" for="sv">🎥 ${t('vh')}</label><input type="file" id="sv" accept="video/mp4,video/webm,video/quicktime" data-a-change="pv"><video id="vp" controls playsinline ${f.file ? `src="${f.file}"` : ''} style="width:100%;border-radius:10px;display:${f.file ? 'block' : 'none'}"></video></div>${RD.sellCard(f)}<button class="btn out" data-a="preview">${t('prev')}</button><button class="btn sun" data-a="list" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : t('publish')}</button><div class="note">${t('sellN')}</div>`; },
   cart: () => {
     if (me() && !S.phone) S.phone = showPh(me().phone);
     const c = calc(); let h = `<h2>${t('cart')}</h2>`;
     if (!c.it.length) h += `<p class="mut">${t('empty')}</p>`;
     else {
-      h += Object.keys(c.g).map((s) => `<div class="card"><div class="pn">${esc(c.g[s][0][0].s)}${VF.badge(s)}</div>${c.g[s].map(([p, n]) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}</div></div><div class="qty"><button data-a="chg" data-id="${p.id}" data-d="-1" aria-label="−">−</button><span>${n}</span><button data-a="chg" data-id="${p.id}" data-d="1" aria-label="+">+</button></div></div>`).join('')}</div>`).join('') +
-        `<div class="card"><div class="tr"><span class="mut">${t('dlv')}</span><span>${KES(c.fee)}</span></div><div class="tr"><b>${t('tot')}</b><b>${KES(c.sub + c.fee)}</b></div></div><p class="mut">${t('sep')}</p><h2>${t('how')}</h2>${Object.keys(DEL).map((k) => `<button class="opt" aria-pressed="${k == S.dm}" data-a="dm" data-v="${k}"><b>${DEL[k][0]}</b> · ${KES(DEL[k][1])}<div class="mut">${DEL[k][2]}</div></button>`).join('')}
- ${S.dm != 'self' ? `<label class="f" for="ad">${t('addr')}</label><input type="text" id="ad" maxlength="120" autocomplete="street-address" value="${esc(S.addr)}" data-m="addr">` : ''}<label class="f" for="ph">${t('phone')}</label><input type="tel" id="ph" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(S.phone)}" data-m="phone"><label class="ck"><input type="checkbox" data-m="agree" ${S.agree ? 'checked' : ''}><span>${t('agree')} <button class="lk" data-a="info" style="display:inline">${t('info')}</button></span></label>${me() ? '' : `<p class="mut">🔒 ${t('payLogin')}</p>`}<button class="btn" data-a="pay" ${S.busy ? 'disabled' : ''}>${t('pay')} · ${KES(c.sub + c.fee)}</button><div class="note">${t('escrow')}</div><div class="note">${t('o_dev')}</div>`;
+      h += Object.keys(c.g).map((s) => `<div class="card"><div class="pn">${esc(c.g[s][0][0].s)}${VF.badge(s)}</div>${c.g[s].map(([p, n]) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}</div></div><div class="qty"><button data-a="chg" data-id="${p.id}" data-d="-1" aria-label="−">−</button><span>${n}</span><button data-a="chg" data-id="${p.id}" data-d="1" aria-label="+">+</button></div></div>`).join('')}${RD.cartChoice(s, c.g[s])}</div>`).join('') +
+        `<div class="card"><div class="tr"><b>${t('tot')}</b><b>${KES(c.sub)}</b></div><div class="mut">${t('dFeeN')}</div></div><p class="mut">${t('sepR')}</p>
+ <label class="f" for="ad">${t('dAddr')}</label><input type="text" id="ad" maxlength="120" autocomplete="street-address" value="${esc(S.addr)}" data-m="addr"><label class="f" for="ph">${t('phone')}</label><input type="tel" id="ph" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(S.phone)}" data-m="phone"><label class="ck"><input type="checkbox" data-m="agree" ${S.agree ? 'checked' : ''}><span>${t('agree')} <button class="lk" data-a="info" style="display:inline">${t('info')}</button></span></label>${me() ? '' : `<p class="mut">🔒 ${t('payLogin')}</p>`}${RD.isRider() ? `<p class="mut">${t('rNoOrder')}</p>` : ''}<button class="btn" data-a="pay" ${S.busy || !RD.cartReady(c.g) ? 'disabled' : ''}>${t('pay')} · ${KES(c.sub)}</button><div class="note">${t('escrow')}</div><div class="note">${t('o_dev')}</div>`;
     }
     const mo = S.orders.filter((o) => S.user && o.b == S.user.id);
     if (mo.length) h += `<h2 style="margin-top:18px">${t('ord')}</h2>` + mo.map((o) => orderCard(o, 'b')).join('');
@@ -244,7 +249,7 @@ const V = {
 <h2 style="margin-top:18px">Reports</h2>${S.reports.length ? S.reports.map((r) => `<div class="card"><div class="pn">${esc(r.name)}</div><div class="mut">${r.kind} report${r.why ? ' · ' + esc(r.why) : ''} · ${fT(r.created_at)}</div>${r.kind == 'photo' ? `<img src="${esc(mediaUrl(r.photo))}" alt="Reported photo" class="thm"><button class="btn" data-a="rph" data-id="${r.id}">Remove photo</button>` : ''}${r.kind != 'order' ? `<button class="btn" data-a="rhide" data-id="${r.id}">Hide listing</button>` : ''}<button class="btn out" data-a="rdis" data-id="${r.id}">Dismiss</button></div>`).join('') : '<p class="mut">No open reports.</p>'}
 <h2 style="margin-top:18px">All listings</h2><div class="card">${L.length ? L.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${esc(p.s)} · ${esc(p.y)} · ${KES(p.p)}${p.chem ? ' · ⚠ agrochemical' : ''}${p.ph.length ? ' · 📷 ' + p.ph.length : ''}${p.hidden ? ' · hidden' : ''}</div></div><button class="chip" data-a="${p.hidden ? 'unhide' : 'hide'}" data-id="${p.id}">${p.hidden ? 'Unhide' : 'Hide'}</button></div>`).join('') : '<p class="mut">No listings yet.</p>'}</div>
 <h2 style="margin-top:18px">Accounts</h2>${S.accounts.length ? `<div class="card">${S.accounts.map((a) => `<div class="tr"><div><div class="pn">${esc(a.name)} <span class="badge">${a.role}</span></div><div class="mut">${maskPh(a.phone)} · ${esc(a.county)}${a.biz ? ' · ' + esc(a.biz) : ''}</div></div></div>`).join('')}</div>` : '<p class="mut">No accounts yet.</p>'}
-${VF.adminSection()}${GR.adminSection()}
+${VF.adminSection()}${GR.adminSection()}${RD.adminSection()}
 <h2 style="margin-top:18px">Orders (${S.orders.length})</h2>${ofChips(S.orders)}${(() => { const l = fOrders(S.orders); return l.length ? l.map((o) => orderCard(o, 'a')).join('') : `<p class="mut">${t('o_none2')}</p>`; })()}
 <button class="btn out" data-a="tab" data-v="shop">← Back to shop</button>`;
   },
@@ -252,12 +257,12 @@ ${VF.adminSection()}${GR.adminSection()}
     const m = me(), f = S.af;
     if (!m) {
       const su = S.am == 'signup', pt = S.spw ? 'text' : 'password';
-      return `<h2>${su ? t('signup') : t('login')}</h2><div class="card" id="authf">${su ? `<div class="mut" style="margin-bottom:6px">${t('iam')}</div>${['buyer', 'seller'].map((r) => `<button class="opt" aria-pressed="${f.role == r}" data-a="role" data-v="${r}">${t(r == 'buyer' ? 'roleB' : 'roleS')}</button>`).join('')}<label class="f" for="an">${t('fname')}</label><input type="text" id="an" maxlength="40" autocomplete="name" value="${esc(f.name)}" data-m="af.name">${f.role == 'seller' ? `<label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz">` : ''}<label class="f" for="ay">${t('county')}</label><select id="ay" data-m="af.y">${opts(COUNTIES.slice(1), f.y)}</select>` : ''}<label class="f" for="ap">${t('lphone')}</label><input type="tel" id="ap" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(f.phone)}" data-m="af.phone"><label class="f" for="aw">${su ? t('pw') : t('pwl')}</label><input type="${pt}" id="aw" maxlength="64" autocomplete="${su ? 'new-password' : 'current-password'}" value="${esc(f.pw)}" data-m="af.pw">${su ? `<label class="f" for="aw2">${t('pw2')}</label><input type="${pt}" id="aw2" maxlength="64" autocomplete="new-password" value="${esc(f.pw2)}" data-m="af.pw2">` : ''}<label class="ck"><input type="checkbox" data-a-change="spw" ${S.spw ? 'checked' : ''}><span>${t('show')}</span></label><p class="err" id="aerr" role="alert"></p><button class="btn" data-a="auth" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : su ? t('signup') : t('login')}</button><button class="lk" data-a="goauth" data-v="${su ? 'login' : 'signup'}">${su ? t('haveacc') : t('noacc')}</button>${su ? '' : `<br><button class="lk" data-a="forgot">${t('forgot')}</button>`}</div><div class="note">${t('accN')}</div>`;
+      return `<h2>${su ? t('signup') : t('login')}</h2><div class="card" id="authf">${su ? `<div class="mut" style="margin-bottom:6px">${t('iam')}</div>${['buyer', 'seller', 'rider'].map((r) => `<button class="opt" aria-pressed="${f.role == r}" data-a="role" data-v="${r}">${t(r == 'buyer' ? 'roleB' : r == 'seller' ? 'roleS' : 'roleR')}</button>`).join('')}<label class="f" for="an">${t('fname')}</label><input type="text" id="an" maxlength="40" autocomplete="name" value="${esc(f.name)}" data-m="af.name">${f.role == 'seller' ? `<label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz">` : ''}<label class="f" for="ay">${t('county')}</label><select id="ay" data-m="af.y">${opts(COUNTIES.slice(1), f.y)}</select>` : ''}<label class="f" for="ap">${t('lphone')}</label><input type="tel" id="ap" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(f.phone)}" data-m="af.phone"><label class="f" for="aw">${su ? t('pw') : t('pwl')}</label><input type="${pt}" id="aw" maxlength="64" autocomplete="${su ? 'new-password' : 'current-password'}" value="${esc(f.pw)}" data-m="af.pw">${su ? `<label class="f" for="aw2">${t('pw2')}</label><input type="${pt}" id="aw2" maxlength="64" autocomplete="new-password" value="${esc(f.pw2)}" data-m="af.pw2">` : ''}<label class="ck"><input type="checkbox" data-a-change="spw" ${S.spw ? 'checked' : ''}><span>${t('show')}</span></label><p class="err" id="aerr" role="alert"></p><button class="btn" data-a="auth" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : su ? t('signup') : t('login')}</button><button class="lk" data-a="goauth" data-v="${su ? 'login' : 'signup'}">${su ? t('haveacc') : t('noacc')}</button>${su ? '' : `<br><button class="lk" data-a="forgot">${t('forgot')}</button>`}</div><div class="note">${t('accN')}</div>`;
     }
     const mine = S.listings.filter((p) => p.owner == m.id), so = S.orders.filter((o) => o.sl == m.id), bo = S.orders.filter((o) => o.b == m.id);
     return `<h2>${t('acct')}</h2><div class="card"><div class="pn">${esc(m.name)}${VF.badge(m.id)} <span class="badge">${t(m.role)}</span>${isAdmin() ? ` <span class="badge">${t('admin')}</span>` : ''}</div>${m.biz ? `<div class="mut">🏪 ${esc(m.biz)}</div>` : ''}<div class="mut">📞 ${showPh(m.phone)}</div><div class="mut">📍 ${esc(m.county)}</div><div class="mut">${t('since')} ${new Date(m.created_at).toLocaleDateString('en-KE')}</div></div>${isAdmin() ? `<button class="btn sun" data-a="admin">🛡️ ${t('adminD')}</button>` : ''}` +
-      (m.role == 'buyer' ? `<div class="card"><div class="pn">${t('become')}</div><p class="mut">${t('becomeN')}</p><label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz"><button class="btn sun" data-a="become">${t('become')}</button></div>` :
-        `${VF.notesCard()}${GR.accountButton()}${VF.accountCard()}${VF.waCard()}<h2 style="margin-top:18px">${t('myl')}</h2><div class="card">${mine.length ? mine.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}${p.hidden ? ' · ' + t('hid') : ''}</div></div><button class="chip" data-a="rml" data-id="${p.id}">${t('prm')}</button></div>`).join('') : `<p class="mut">${t('nol')}</p>`}<button class="btn" data-a="tab" data-v="sell">➕ ${t('sellH')}</button></div><h2 style="margin-top:18px">${t('soldH')}</h2><button class="btn out" data-a="tab" data-v="orders">📋 ${t('orders')} (${so.length})</button>`) +
+      (m.role == 'rider' ? `${VF.notesCard()}${RD.accountCard()}` : m.role == 'buyer' ? `${VF.notesCard()}<div class="card"><div class="pn">${t('become')}</div><p class="mut">${t('becomeN')}</p><label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz"><button class="btn sun" data-a="become">${t('become')}</button></div>` :
+        `${VF.notesCard()}${GR.accountButton()}${VF.accountCard()}${VF.waCard()}<h2 style="margin-top:18px">${t('myl')}</h2><div class="card">${mine.length ? mine.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}${p.hidden ? ' · ' + t('hid') : ''}</div>${RD.listingChips(p)}</div><button class="chip" data-a="rml" data-id="${p.id}">${t('prm')}</button></div>`).join('') : `<p class="mut">${t('nol')}</p>`}<button class="btn" data-a="tab" data-v="sell">➕ ${t('sellH')}</button></div><h2 style="margin-top:18px">${t('soldH')}</h2><button class="btn out" data-a="tab" data-v="orders">📋 ${t('orders')} (${so.length})</button>`) +
       `<h2 style="margin-top:18px">${t('ord')}</h2>${bo.length ? `<button class="btn out" data-a="tab" data-v="cart">${t('ord')} (${bo.length}) →</button>` : `<p class="mut">${t('noord')}</p>`}<button class="btn out" data-a="logout" style="margin-top:14px">${t('logout')}</button><button class="lk" data-a="delacc">${t('del')}</button><div class="note">${t('accN')}</div>`;
   },
 };
@@ -288,7 +293,7 @@ const VF = createVerify({ S, t, esc, KES, sb, toast, dlgOpen, rpc, guarded, errM
 
 // ------------------------------------------------------------------ actions
 const A = {
-  tab: (d) => { S.pend = null; if (d.v == 'cart' && !me()) return needLogin('cart'); if (d.v == 'orders') S.of = 'all'; S.tab = d.v; render(); scrollTo(0, 0); if (['cart', 'orders', 'admin', 'account', 'grow'].includes(d.v)) reloadOrders(); },
+  tab: (d) => { S.pend = null; if (d.v == 'cart' && !me()) return needLogin('cart'); if (d.v == 'orders') S.of = 'all'; S.tab = d.v; render(); scrollTo(0, 0); if (['cart', 'orders', 'admin', 'account', 'grow', 'rides'].includes(d.v)) reloadOrders(); },
   cat: (d) => { S.cat = d.v; render(); },
   add: (d) => {
     const pp = findL(d.id); if (!pp || pp.hidden) return toast(t('pvonly'));
@@ -326,6 +331,7 @@ const A = {
     if (!me()) return needLogin('sell'); if (!isSeller()) return toast(t('needSeller'));
     const f = S.f, n = f.n.trim(), p = Number(f.p), u = f.u.trim() || 'unit';
     if (n.length < 2 || n.length > 40) return toast(t('bn')); if (!(p >= 1 && p <= 1000000)) return toast(t('bp')); if (f.c == 'input' && !f.ok) return toast(t('ba'));
+    if (f.sr === false && f.br === false) return toast(t('dNeed'));
     render();
     const uid = S.user.id, uploaded = [];
     const up = async (path, blob, type) => { const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: type, upsert: false }); if (error) throw error; uploaded.push(path); };
@@ -335,7 +341,7 @@ const A = {
       let video = null;
       if (f.fileObj) { video = `${uid}/${rid()}.${VIDEO_EXT[f.fileObj.type]}`; await up(video, f.fileObj, f.fileObj.type); }
       const cover = (photos.find((x) => x.local == f.cv) || photos[0] || {}).path || null;
-      const { error } = await sb.from('listings').insert({ owner: uid, seller_name: '-', name: n, category: f.c, price: Math.round(p), unit: u, county: f.y, photos: photos.map(({ path, k }) => ({ path, k })), cover, video });
+      const { error } = await sb.from('listings').insert({ owner: uid, seller_name: '-', name: n, category: f.c, price: Math.round(p), unit: u, county: f.y, photos: photos.map(({ path, k }) => ({ path, k })), cover, video, seller_rider: f.sr !== false, buyer_rider: f.br !== false });
       if (error) throw error;
     } catch (e) {
       if (uploaded.length) await sb.storage.from(BUCKET).remove(uploaded);
@@ -349,8 +355,8 @@ const A = {
   pay: () => guarded(async () => {
     if (!me()) return needLogin('cart');
     const c = calc(), ph = normPh(S.phone); if (!c.it.length) return;
-    if (!ph) return toast(t('badph')); if (S.dm != 'self' && S.addr.trim().length < 5) return toast(t('badaddr')); if (!S.agree) return toast(t('badag'));
-    const r = await rpc('place_orders', { p_items: c.it.map(([p, q]) => ({ id: p.id, q })), p_dm: S.dm, p_address: S.addr.trim(), p_phone: ph });
+    if (!ph) return toast(t('badph')); if (S.addr.trim().length < 5) return toast(t('badaddr')); if (!RD.cartReady(c.g)) return toast(t('dChoose')); if (!S.agree) return toast(t('badag'));
+    const r = await rpc('place_orders_v2', { p_items: c.it.map(([p, q]) => ({ id: p.id, q })), p_delivery: Object.fromEntries(Object.keys(c.g).map((sid) => [sid, S.dch[sid]])), p_address: S.addr.trim(), p_phone: ph });
     if (r.error) { await loadListings(); render(); return; }
     S.cart = {}; save(); await loadOrders(); toast(t('placed')); S.busy = false; render();
   }),
@@ -469,12 +475,16 @@ Object.assign(A, VF.actions);
 const GR = createGrow({ S, t, esc, KES, sb, toast, rpc, guarded, VF, V, fT: fTx, render: () => render() });
 V.grow = () => GR.view();
 Object.assign(A, GR.actions);
+// ------------------------------------------------------------------ riders and deliveries
+const RD = createRiders({ S, t, esc, KES, sb, toast, rpc, guarded, errMsg, VF, V, opts, COUNTIES, dlgOpen, fT: fTx, render: () => render() });
+V.rides = () => RD.dash();
+Object.assign(A, RD.actions);
 ['admin', 'rdis', 'rhide', 'hide', 'unhide', 'rph'].forEach((k) => { const f = A[k]; A[k] = (...a) => (isAdmin() ? f(...a) : toast(t('noAdmin'))); });
 
 async function reloadOrders() {
   const a = document.activeElement;
-  await Promise.all([loadOrders(), loadAdmin(), VF.loadMine(), GR.loadMine(), GR.loadAdmin()]);
-  if (['orders', 'account', 'cart', 'admin', 'grow'].includes(S.tab) && !(a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) && !$('#dlg').open) render(); else chrome();
+  await Promise.all([loadOrders(), loadAdmin(), VF.loadMine(), GR.loadMine(), GR.loadAdmin(), RD.loadMine(), RD.loadAdmin()]);
+  if (['orders', 'account', 'cart', 'admin', 'grow', 'rides'].includes(S.tab) && !(a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) && !$('#dlg').open) render(); else chrome();
 }
 
 document.addEventListener('keydown', (e) => { const el = e.target; if (e.key == 'Enter' && el.tagName == 'INPUT' && el.type != 'checkbox' && el.closest('#authf')) { e.preventDefault(); A.auth(); } });
@@ -494,7 +504,7 @@ let channel = null;
 function subscribe() {
   if (channel) { sb.removeChannel(channel); channel = null; }
   if (!S.user) return;
-  channel = sb.channel('orders-' + S.user.id).on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => reloadOrders()).subscribe();
+  channel = sb.channel('orders-' + S.user.id).on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => reloadOrders()).on('postgres_changes', { event: '*', schema: 'public', table: 'deliveries' }, () => reloadOrders()).subscribe();
 }
 sb.auth.onAuthStateChange((ev) => { if (ev == 'SIGNED_IN' || ev == 'SIGNED_OUT') setTimeout(subscribe, 0); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { Promise.all([loadListings(), VF.loadVerified(), GR.loadPublic()]).then(() => { if (S.tab == 'shop') fill(); }); if (S.user) reloadOrders(); } });

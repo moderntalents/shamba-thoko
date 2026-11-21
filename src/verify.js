@@ -27,10 +27,15 @@ export function createVerify(c) {
       if (r.key == 'verification_account_rule') S.vset.accRule = String(r.value);
     }
   }
+  const isR = () => !!(S.profile && S.profile.role == 'rider');
+  // Riders use the same application; a few labels change (vehicle instead of products).
+  const tv = (k) => (isR() && t('rv_' + k) !== 'rv_' + k ? t('rv_' + k) : t(k));
+  const riderIds = () => new Set((S.accounts || []).filter((a) => a.role == 'rider').map((a) => a.id));
   async function loadMine() {
-    S.myv = null; S.vnotes = []; if (!S.user || !S.profile || S.profile.role != 'seller') return;
+    S.myv = null; S.vnotes = []; if (!S.user || !S.profile) return;
+    const canV = ['seller', 'rider'].includes(S.profile.role); // notifications for everyone; verification for sellers and riders
     const [{ data }, n] = await Promise.all([
-      sb.from('seller_verifications').select('*').eq('seller', S.user.id).order('created_at', { ascending: false }).limit(1),
+      canV ? sb.from('seller_verifications').select('*').eq('seller', S.user.id).order('created_at', { ascending: false }).limit(1) : Promise.resolve({ data: [] }),
       sb.from('seller_notifications').select('*').eq('seller', S.user.id).order('created_at', { ascending: false }).limit(20),
     ]);
     S.vnotes = n.data || [];
@@ -98,16 +103,16 @@ export function createVerify(c) {
   }
   function form() {
     const f = S.vf, upd = S.myv && S.myv.status == 'info_requested';
-    return `<h2>✓ ${t('vH')}</h2><p class="mut">${t('vIntro')}</p>${upd && S.myv.admin_note ? `<div class="note"><b>${t('vAdminNote')}:</b> ${esc(S.myv.admin_note)}</div>` : ''}
+    return `<h2>✓ ${t('vH')}</h2><p class="mut">${tv('vIntro')}</p>${upd && S.myv.admin_note ? `<div class="note"><b>${t('vAdminNote')}:</b> ${esc(S.myv.admin_note)}</div>` : ''}
 <div class="card"><label class="f" for="vl">${t('vLegal')}</label><input type="text" id="vl" maxlength="80" autocomplete="name" value="${esc(f.legal)}" data-m="vf.legal" data-r="vacc">
 <label class="f" for="vp">${t('vPhone')}</label><input type="tel" id="vp" inputmode="tel" maxlength="16" value="${esc(f.phone)}" data-m="vf.phone">
 <div class="row"><div><label class="f" for="vit">${t('vIdType')}</label><select id="vit" data-m="vf.idType">${Object.entries(t('vIdTypes')).map(([k, l]) => `<option value="${k}" ${f.idType == k ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div><label class="f" for="vin">${t('vIdNo')}</label><input type="text" id="vin" maxlength="12" autocomplete="off" value="${esc(f.idNo)}" data-m="vf.idNo"></div></div>
-<label class="f" for="vb">${t('vBiz')}</label><input type="text" id="vb" maxlength="80" value="${esc(f.biz)}" data-m="vf.biz">
+<label class="f" for="vb">${tv('vBiz')}</label><input type="text" id="vb" maxlength="80" value="${esc(f.biz)}" data-m="vf.biz">
 <label class="f" for="vy">${t('county')}</label><select id="vy" data-m="vf.y">${opts(COUNTIES.slice(1), f.y)}</select>
-<label class="f" for="vlo">${t('vLoc')}</label><input type="text" id="vlo" maxlength="120" value="${esc(f.loc)}" data-m="vf.loc">
-<label class="f" for="vpr">${t('vProd')}</label><input type="text" id="vpr" maxlength="200" value="${esc(f.prod)}" data-m="vf.prod"></div>
-${waFields(f, 'vf')}
-<div class="card"><div class="pn">📷 ${t('vPhotos')}</div><p class="mut">${t('vPhotosN')}</p><div class="vgrid">${SLOTS.map((k, i) => { const p = f.ph[k]; return `<div class="vslot">${p ? `<img src="${p.u}" alt="${esc(t('vSlots')[k])}">` : `<div class="vph" aria-hidden="true">${i < 2 ? '🙂' : i == 2 ? '🧺' : '🧑‍🌾'}</div>`}<div class="mut">${i + 1}. ${t('vSlots')[k]}</div><button class="btn ${p ? 'out' : ''}" data-a="vcam" data-v="${k}">📷 ${p ? t('vRetake') : t('vTake')}</button></div>`; }).join('')}</div></div>
+<label class="f" for="vlo">${tv('vLoc')}</label><input type="text" id="vlo" maxlength="120" value="${esc(f.loc)}" data-m="vf.loc">
+<label class="f" for="vpr">${tv('vProd')}</label><input type="text" id="vpr" maxlength="200" value="${esc(f.prod)}" data-m="vf.prod"></div>
+${isR() ? '' : waFields(f, 'vf')}
+<div class="card"><div class="pn">📷 ${t('vPhotos')}</div><p class="mut">${tv('vPhotosN')}</p><div class="vgrid">${SLOTS.map((k, i) => { const p = f.ph[k]; return `<div class="vslot">${p ? `<img src="${p.u}" alt="${esc(t('vSlots')[k])}">` : `<div class="vph" aria-hidden="true">${i < 2 ? '🙂' : i == 2 ? '🧺' : '🧑‍🌾'}</div>`}<div class="mut">${i + 1}. ${tv('vSlots')[k]}</div><button class="btn ${p ? 'out' : ''}" data-a="vcam" data-v="${k}">📷 ${p ? t('vRetake') : t('vTake')}</button></div>`; }).join('')}</div></div>
 ${upd && S.myv.payment_status == 'confirmed' ? '' : payBlock(true)}
 <label class="ck"><input type="checkbox" data-m="vf.consent" ${f.consent ? 'checked' : ''}><span>${t('vConsent')}</span></label>
 <button class="btn sun" data-a="vsubmit" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : upd ? t('vResubmit') : t('vSubmit')}</button>
@@ -116,7 +121,7 @@ ${upd && S.myv.payment_status == 'confirmed' ? '' : payBlock(true)}
   const waitUntil = () => (S.myv && S.myv.status == 'revoked' && S.myv.closed_at ? new Date(new Date(S.myv.closed_at).getTime() + 90 * 864e5) : null);
   const canApply = () => { const s = effSt(S.myv), w = waitUntil(); if (w && w > new Date()) return false; return s == 'none' || s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'superseded' || s == 'closed' || s == 'expired' || (s == 'approved' && new Date(S.myv.expires_at) - Date.now() < 30 * 864e5); };
   function view() {
-    if (!S.profile || S.profile.role != 'seller') { S.tab = 'account'; return c.V.account(); }
+    if (!S.profile || !['seller', 'rider'].includes(S.profile.role)) { S.tab = 'account'; return c.V.account(); }
     const s = effSt(S.myv);
     if (s == 'info_requested' || canApply()) return form();
     return `<h2>✓ ${t('vH')}</h2>${accountCard()}<button class="btn out" data-a="tab" data-v="account">← ${t('acct')}</button>`;
@@ -139,6 +144,7 @@ ${upd && S.myv.payment_status == 'confirmed' ? '' : payBlock(true)}
     return waFields(S.waf, 'waf', `<div class="mut">${live ? t('waLive') : S.verified.has(S.user.id) ? t('waOff') : t('waNeedVerify')}</div><button class="btn out" data-a="wasave">${t('waSave')}</button>`);
   }
   async function saveWa(f) {
+    if (isR()) return true; // WhatsApp contact is for sellers
     const num = f.waMode == 'none' ? '' : f.waMode == 'same' ? S.profile.phone : f.waNum;
     if (f.waMode == 'other' && !c.normPh(f.waNum)) { toast(t('waBad')); return false; }
     const r = await rpc('set_my_whatsapp', { p_number: num, p_public: f.waMode != 'none' && !!f.waPub });
@@ -149,7 +155,7 @@ ${upd && S.myv.payment_status == 'confirmed' ? '' : payBlock(true)}
   // Seller dashboard card in Account.
   function accountCard() {
     const v = S.myv, s = effSt(v);
-    if (s == 'none') return `<div class="card"><div class="pn">✓ ${t('vGet')}</div><p class="mut">${fmt(t('vGetN'))}</p><button class="btn sun" data-a="vstart">✓ ${t('vGet')} · ${KES(S.vset.fee)}</button></div>`;
+    if (s == 'none') return `<div class="card"><div class="pn">✓ ${t('vGet')}</div><p class="mut">${fmt(tv('vGetN'))}</p><button class="btn sun" data-a="vstart">✓ ${t('vGet')} · ${KES(S.vset.fee)}</button></div>`;
     const expSoon = s == 'approved' && new Date(v.expires_at) - Date.now() < 30 * 864e5;
     return `<div class="card"><div class="pn">${t('vStatus')}: <span class="bd ${s == 'approved' ? 'completed' : s == 'pending' || s == 'info_requested' ? 'pending' : 'cancelled'}">${t('vSt')[s]}</span>${s == 'approved' ? badge(S.user.id) : ''}</div>
 ${v.expires_at && (s == 'approved' || s == 'expired' || s == 'suspended') ? `<div class="mut">${fmt(t('vValid'), fD(v.expires_at))}</div>` : ''}
@@ -173,7 +179,7 @@ ${canApply() && (s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == '
 <div class="chips" role="group">${['pending', 'info_requested', 'approved', 'expired', 'suspended', 'rejected', 'revoked', 'withdrawn', 'superseded', 'closed', 'all'].map((k) => `<button class="chip" aria-pressed="${S.vfilt == k}" data-a="vfilt" data-v="${k}">${k == 'all' ? 'All' : t('vSt')[k]} (${k == 'all' ? L.length : cnt(k)})</button>`).join('')}</div>
 ${list.length ? list.map((v) => { const s = effSt(v); return `<div class="card"><div class="tr" style="padding-top:0"><b>${esc(v.legal_name)}</b><span class="bd ${s == 'approved' ? 'completed' : s == 'pending' || s == 'info_requested' ? 'pending' : 'cancelled'}">${t('vSt')[s]}</span></div>
 ${flags(v)}
-<div class="mut">Account: ${esc(sellerName(v))} · Applied ${c.fT(v.created_at)}</div>
+<div class="mut">${riderIds().has(v.seller) ? '<span class="badge">🛵 Rider</span> ' : ''}Account: ${esc(sellerName(v))} · Applied ${c.fT(v.created_at)}</div>
 <div class="mut">📞 ${showPh(v.phone)} · ${t('vIdTypes')[v.id_type]} <b>${esc(v.id_number)}</b></div>${L.some((o) => o.seller != v.seller && o.id_type == v.id_type && o.id_number == v.id_number) ? '<div class="warn">⚠ This ID number also appears on another seller’s application. Check carefully.</div>' : ''}
 <div class="mut">🏪 ${esc(v.business_name)} · 📍 ${esc(v.location)}, ${esc(v.county)}</div>
 <div class="mut">🧺 ${esc(v.products)}</div>
@@ -210,7 +216,7 @@ ${blocksSection()}${retentionSection()}${auditSection()}`;
   }
   function photoGrid(v) {
     const done = mine(v), open = v.status == 'pending' || v.status == 'info_requested';
-    return `<div class="vgrid">${SLOTS.map((k) => { const u = S.vurls[v.photos[k]]; return `<div class="vslot">${u ? `<button class="vthumb" data-a="vview" data-id="${v.id}" data-v="${k}" aria-label="Open ${esc(t('vSlots')[k])} full size"><img src="${esc(u)}" alt="${esc(t('vSlots')[k])}"></button>` : `<button class="btn out" data-a="vphotos" data-id="${v.id}">Show photos</button>`}<div class="mut">${done.includes(k) ? '✅ Inspected · ' : ''}${t('vSlots')[k]}</div></div>`; }).join('')}</div>${open ? `<div class="${done.length == 4 ? 'note' : 'warn'}">Photos inspected by you: ${done.length}/4. Open each photo full size before approving.</div>` : ''}`;
+    return `<div class="vgrid">${SLOTS.map((k) => { const u = S.vurls[v.photos[k]]; return `<div class="vslot">${u ? `<button class="vthumb" data-a="vview" data-id="${v.id}" data-v="${k}" aria-label="Open ${esc(t('vSlots')[k])} full size"><img src="${esc(u)}" alt="${esc(t('vSlots')[k])}"></button>` : `<button class="btn out" data-a="vphotos" data-id="${v.id}">Show photos</button>`}<div class="mut">${done.includes(k) ? '✅ Inspected · ' : ''}${tv('vSlots')[k]}</div></div>`; }).join('')}</div>${open ? `<div class="${done.length == 4 ? 'note' : 'warn'}">Photos inspected by you: ${done.length}/4. Open each photo full size before approving.</div>` : ''}`;
   }
   function caseActs(v) {
     if (v.purged_at) return '';
@@ -266,7 +272,7 @@ ${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<butto
     vpay: (d) => { S.vf.pay = d.v; c.render(); },
     vcam: (d) => {
       cam = { slot: d.v, facing: SLOT_CAM[d.v] };
-      dlgOpen(`<h2>📷 ${t('vSlots')[d.v]}</h2><video id="vcam" class="vcam ${cam.facing == 'user' ? 'mirror' : ''}" autoplay playsinline muted></video><p class="err" id="vcamerr" role="alert"></p><button class="btn sun" id="vcapbtn" data-a="vcapture" disabled>📸 ${t('vCapture')}</button><button class="btn out" data-a="vswitch">🔄 ${t('vSwitch')}</button>`);
+      dlgOpen(`<h2>📷 ${tv('vSlots')[d.v]}</h2><video id="vcam" class="vcam ${cam.facing == 'user' ? 'mirror' : ''}" autoplay playsinline muted></video><p class="err" id="vcamerr" role="alert"></p><button class="btn sun" id="vcapbtn" data-a="vcapture" disabled>📸 ${t('vCapture')}</button><button class="btn out" data-a="vswitch">🔄 ${t('vSwitch')}</button>`);
       startCam();
     },
     vswitch: () => { cam.facing = cam.facing == 'user' ? 'environment' : 'user'; const v = document.getElementById('vcam'); if (v) v.classList.toggle('mirror', cam.facing == 'user'); startCam(); },
@@ -348,7 +354,7 @@ ${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<butto
   function notesCard() {
     if (!S.vnotes.length) return '';
     const u = unread();
-    return `<div class="card"><div class="pn">🔔 ${t('vNotesH')}${u ? ` <span class="bd pending">${u}</span>` : ''}</div>${S.vnotes.slice(0, 5).map((n) => `<div class="tr"><div><div${n.read_at ? ' class="mut"' : ''}>${esc((t('nk') || {})[n.kind] || n.kind)}</div><div class="mut">${c.fT(n.created_at)}</div></div></div>`).join('')}${u ? `<button class="btn out" data-a="vread">${t('vNotesRead')}</button>` : ''}</div>`;
+    return `<div class="card"><div class="pn">🔔 ${t('vNotesH')}${u ? ` <span class="bd pending">${u}</span>` : ''}</div>${S.vnotes.slice(0, 5).map((n) => `<div class="tr"><div><div${n.read_at ? ' class="mut"' : ''}>${esc((t('nk') || {})[n.kind] || n.kind)}${n.ref ? ' · ' + esc(n.ref) : ''}</div><div class="mut">${c.fT(n.created_at)}</div></div></div>`).join('')}${u ? `<button class="btn out" data-a="vread">${t('vNotesRead')}</button>` : ''}</div>`;
   }
   A.vread = () => guarded(async () => { if (!(await rpc('mark_notifications_read', {})).error) await loadMine(); S.busy = false; c.render(); });
   return { loadVerified, loadMine, loadApps, badge, view, accountCard, adminSection, actions: A, stopCam, notesCard, unread, wa, waBtn, waCard };
