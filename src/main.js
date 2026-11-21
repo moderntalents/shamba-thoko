@@ -113,7 +113,8 @@ function chrome() {
   const l = $('#lg'); l.textContent = t('lg'); l.setAttribute('aria-label', t('lgl')); $('#cl').textContent = t('cl');
   const m = me(), b = $('#ac'), pn = pendN();
   $('header').classList.toggle('li', !!m);
-  b.textContent = '👤' + (m ? ' ' + m.name.split(' ')[0] : '') + (pn ? ' · ' + pn : '');
+  const vn = VF.unread();
+  b.textContent = '👤' + (m ? ' ' + m.name.split(' ')[0] : '') + (pn ? ' · ' + pn : '') + (vn ? ' 🔔' + vn : '');
   b.setAttribute('aria-label', m ? t('acct') + ': ' + m.name : t('login'));
   b.toggleAttribute('aria-current', S.tab == 'account');
   $('#nav').innerHTML = navTabs().map(([k, i]) => `<button data-a="tab" data-v="${k}" ${k == S.tab ? 'aria-current="page"' : ''}><span aria-hidden="true">${i}</span>${t(k)}${k == 'cart' && cnt() ? `<b aria-label="${cnt()}">${cnt()}</b>` : k == 'orders' && pendN() ? `<b aria-label="${pendN()}">${pendN()}</b>` : ''}</button>`).join('');
@@ -249,7 +250,7 @@ ${VF.adminSection()}
     const mine = S.listings.filter((p) => p.owner == m.id), so = S.orders.filter((o) => o.sl == m.id), bo = S.orders.filter((o) => o.b == m.id);
     return `<h2>${t('acct')}</h2><div class="card"><div class="pn">${esc(m.name)}${VF.badge(m.id)} <span class="badge">${t(m.role)}</span>${isAdmin() ? ` <span class="badge">${t('admin')}</span>` : ''}</div>${m.biz ? `<div class="mut">🏪 ${esc(m.biz)}</div>` : ''}<div class="mut">📞 ${showPh(m.phone)}</div><div class="mut">📍 ${esc(m.county)}</div><div class="mut">${t('since')} ${new Date(m.created_at).toLocaleDateString('en-KE')}</div></div>${isAdmin() ? `<button class="btn sun" data-a="admin">🛡️ ${t('adminD')}</button>` : ''}` +
       (m.role == 'buyer' ? `<div class="card"><div class="pn">${t('become')}</div><p class="mut">${t('becomeN')}</p><label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz"><button class="btn sun" data-a="become">${t('become')}</button></div>` :
-        `${VF.accountCard()}<h2 style="margin-top:18px">${t('myl')}</h2><div class="card">${mine.length ? mine.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}${p.hidden ? ' · ' + t('hid') : ''}</div></div><button class="chip" data-a="rml" data-id="${p.id}">${t('prm')}</button></div>`).join('') : `<p class="mut">${t('nol')}</p>`}<button class="btn" data-a="tab" data-v="sell">➕ ${t('sellH')}</button></div><h2 style="margin-top:18px">${t('soldH')}</h2><button class="btn out" data-a="tab" data-v="orders">📋 ${t('orders')} (${so.length})</button>`) +
+        `${VF.notesCard()}${VF.accountCard()}<h2 style="margin-top:18px">${t('myl')}</h2><div class="card">${mine.length ? mine.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}${p.hidden ? ' · ' + t('hid') : ''}</div></div><button class="chip" data-a="rml" data-id="${p.id}">${t('prm')}</button></div>`).join('') : `<p class="mut">${t('nol')}</p>`}<button class="btn" data-a="tab" data-v="sell">➕ ${t('sellH')}</button></div><h2 style="margin-top:18px">${t('soldH')}</h2><button class="btn out" data-a="tab" data-v="orders">📋 ${t('orders')} (${so.length})</button>`) +
       `<h2 style="margin-top:18px">${t('ord')}</h2>${bo.length ? `<button class="btn out" data-a="tab" data-v="cart">${t('ord')} (${bo.length}) →</button>` : `<p class="mut">${t('noord')}</p>`}<button class="btn out" data-a="logout" style="margin-top:14px">${t('logout')}</button><button class="lk" data-a="delacc">${t('del')}</button><div class="note">${t('accN')}</div>`;
   },
 };

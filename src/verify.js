@@ -10,7 +10,7 @@ export function createVerify(c) {
   const fD = (d) => new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
   const fmt = (s, d) => s.replace('{d}', d).replace('{f}', KES(S.vset.fee));
   S.verified = new Map(); S.vset = { fee: 500, months: 12, info: '' }; S.myv = null; S.vapps = []; S.vfilt = 'pending'; S.vurls = {};
-  S.vcases = {}; S.vblocks = []; S.vaudit = []; S.vqueue = 0;
+  S.vcases = {}; S.vblocks = []; S.vaudit = []; S.vqueue = 0; S.vnotes = [];
   const blankVf = () => ({ legal: '', phone: '', idType: 'national_id', idNo: '', biz: '', y: 'Kiambu', loc: '', prod: '', ph: {}, pay: 'mpesa', code: '', consent: false });
   S.vf = blankVf();
 
@@ -25,8 +25,12 @@ export function createVerify(c) {
     }
   }
   async function loadMine() {
-    S.myv = null; if (!S.user || !S.profile || S.profile.role != 'seller') return;
-    const { data } = await sb.from('seller_verifications').select('*').eq('seller', S.user.id).order('created_at', { ascending: false }).limit(1);
+    S.myv = null; S.vnotes = []; if (!S.user || !S.profile || S.profile.role != 'seller') return;
+    const [{ data }, n] = await Promise.all([
+      sb.from('seller_verifications').select('*').eq('seller', S.user.id).order('created_at', { ascending: false }).limit(1),
+      sb.from('seller_notifications').select('*').eq('seller', S.user.id).order('created_at', { ascending: false }).limit(20),
+    ]);
+    S.vnotes = n.data || [];
     S.myv = data && data[0] ? data[0] : null;
   }
   async function loadApps() {
@@ -105,7 +109,7 @@ ${upd && S.myv.payment_status == 'confirmed' ? '' : payBlock(true)}
 <button class="btn out" data-a="tab" data-v="account">← ${t('acct')}</button>`;
   }
   const waitUntil = () => (S.myv && S.myv.status == 'revoked' && S.myv.closed_at ? new Date(new Date(S.myv.closed_at).getTime() + 90 * 864e5) : null);
-  const canApply = () => { const s = effSt(S.myv), w = waitUntil(); if (w && w > new Date()) return false; return s == 'none' || s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'superseded' || s == 'expired' || (s == 'approved' && new Date(S.myv.expires_at) - Date.now() < 30 * 864e5); };
+  const canApply = () => { const s = effSt(S.myv), w = waitUntil(); if (w && w > new Date()) return false; return s == 'none' || s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'superseded' || s == 'closed' || s == 'expired' || (s == 'approved' && new Date(S.myv.expires_at) - Date.now() < 30 * 864e5); };
   function view() {
     if (!S.profile || S.profile.role != 'seller') { S.tab = 'account'; return c.V.account(); }
     const s = effSt(S.myv);
@@ -123,9 +127,10 @@ ${s == 'pending' || s == 'info_requested' ? `<div class="mut">${t('vPayFee')}: $
 ${v.admin_note && s != 'approved' ? `<div class="note"><b>${t('vAdminNote')}:</b> ${esc(v.admin_note)}</div>` : ''}
 ${s == 'suspended' ? `<p class="mut">${t('vSuspN')}</p>` : ''}
 ${s == 'pending' && v.payment_status != 'confirmed' && v.payment_status != 'submitted' ? payBlock(false) + `<button class="btn" data-a="vaddpay">${t('vAddPay')}</button>` : ''}
+${s == 'info_requested' && v.info_requested_at ? `<p class="mut">${fmt(t('vRespondBy'), fD(new Date(new Date(v.info_requested_at).getTime() + 90 * 864e5)))}</p>` : ''}
 ${s == 'info_requested' ? `<button class="btn sun" data-a="vstart">${t('vUpdate')}</button>` : ''}
 ${waitUntil() && waitUntil() > new Date() ? `<p class="mut">${fmt(t('vWait'), fD(waitUntil()))}</p>` : ''}
-${canApply() && (s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'expired' || expSoon) ? `<p class="mut">${t('vRenewN')}</p><button class="btn sun" data-a="vstart">✓ ${s == 'rejected' ? t('vGet') : t('vRenew')} · ${KES(S.vset.fee)}</button>` : ''}</div>`;
+${canApply() && (s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'closed' || s == 'expired' || expSoon) ? `<p class="mut">${t('vRenewN')}</p><button class="btn sun" data-a="vstart">✓ ${s == 'rejected' ? t('vGet') : t('vRenew')} · ${KES(S.vset.fee)}</button>` : ''}</div>`;
   }
   // Admin dashboard section.
   function adminSection() {
@@ -134,7 +139,7 @@ ${canApply() && (s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == '
     const sellerName = (v) => { const a = S.accounts.find((x) => x.id == v.seller); return a ? a.name : ''; };
     return `<h2 style="margin-top:18px">Seller verification</h2>
 <div class="card"><div class="pn">Settings</div><div class="row"><div><label class="f" for="vsfee">Fee (KSh)</label><input type="number" id="vsfee" min="0" max="100000" value="${S.vset.fee}"></div><div><label class="f" for="vsmon">Valid for (months)</label><input type="number" id="vsmon" min="1" max="36" value="${S.vset.months}"></div></div><label class="f" for="vsinfo">Payment instructions shown to sellers</label><input type="text" id="vsinfo" maxlength="500" value="${esc(S.vset.info)}"><button class="btn out" data-a="vsettings">Save settings</button></div>
-<div class="chips" role="group">${['pending', 'info_requested', 'approved', 'expired', 'suspended', 'rejected', 'revoked', 'withdrawn', 'superseded', 'all'].map((k) => `<button class="chip" aria-pressed="${S.vfilt == k}" data-a="vfilt" data-v="${k}">${k == 'all' ? 'All' : t('vSt')[k]} (${k == 'all' ? L.length : cnt(k)})</button>`).join('')}</div>
+<div class="chips" role="group">${['pending', 'info_requested', 'approved', 'expired', 'suspended', 'rejected', 'revoked', 'withdrawn', 'superseded', 'closed', 'all'].map((k) => `<button class="chip" aria-pressed="${S.vfilt == k}" data-a="vfilt" data-v="${k}">${k == 'all' ? 'All' : t('vSt')[k]} (${k == 'all' ? L.length : cnt(k)})</button>`).join('')}</div>
 ${list.length ? list.map((v) => { const s = effSt(v); return `<div class="card"><div class="tr" style="padding-top:0"><b>${esc(v.legal_name)}</b><span class="bd ${s == 'approved' ? 'completed' : s == 'pending' || s == 'info_requested' ? 'pending' : 'cancelled'}">${t('vSt')[s]}</span></div>
 ${flags(v)}
 <div class="mut">Account: ${esc(sellerName(v))} · Applied ${c.fT(v.created_at)}</div>
@@ -297,5 +302,13 @@ ${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<butto
   // Admin-only actions are also blocked here (and always by the database).
   ['vfilt', 'vphotos', 'vadm', 'vsettings', 'vview', 'vfraud', 'vhold', 'vlift', 'vretention'].forEach((k) => { const f = A[k]; A[k] = (...a) => (S.admin ? f(...a) : toast(t('noAdmin'))); });
 
-  return { loadVerified, loadMine, loadApps, badge, view, accountCard, adminSection, actions: A, stopCam };
+  // Seller notifications (reminders and automatic closure).
+  const unread = () => S.vnotes.filter((n) => !n.read_at).length;
+  function notesCard() {
+    if (!S.vnotes.length) return '';
+    const u = unread();
+    return `<div class="card"><div class="pn">🔔 ${t('vNotesH')}${u ? ` <span class="bd pending">${u}</span>` : ''}</div>${S.vnotes.slice(0, 5).map((n) => `<div class="tr"><div><div${n.read_at ? ' class="mut"' : ''}>${esc((t('nk') || {})[n.kind] || n.kind)}</div><div class="mut">${c.fT(n.created_at)}</div></div></div>`).join('')}${u ? `<button class="btn out" data-a="vread">${t('vNotesRead')}</button>` : ''}</div>`;
+  }
+  A.vread = () => guarded(async () => { if (!(await rpc('mark_notifications_read', {})).error) await loadMine(); S.busy = false; c.render(); });
+  return { loadVerified, loadMine, loadApps, badge, view, accountCard, adminSection, actions: A, stopCam, notesCard, unread };
 }
