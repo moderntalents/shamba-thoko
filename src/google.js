@@ -5,7 +5,7 @@ const GLOGO = '<svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true
 
 export function createGoogle(c) {
   const { S, t, esc, sb, toast, rpc, guarded, opts, COUNTIES } = c;
-  S.gf = null;
+  S.gg = null;
   const redirectTo = () => location.origin + '/';
   const hasGoogle = () => !!(S.user && (S.user.identities || []).some((i) => i.provider == 'google'));
   const needsProfile = () => !!(S.user && !S.profile);
@@ -23,13 +23,13 @@ export function createGoogle(c) {
 
   function completeView() {
     const u = S.user, md = u.user_metadata || {};
-    const f = S.gf || (S.gf = { name: (md.full_name || md.name || '').slice(0, 40), phone: '', y: 'Nairobi', role: 'buyer', biz: '' });
+    const f = S.gg || (S.gg = { name: (md.full_name || md.name || '').slice(0, 40), phone: '', y: 'Nairobi', role: 'buyer', biz: '' });
     return `<h2>${t('gDoneH')}</h2><div class="card"><div class="gwho">${GLOGO}<div><div class="pn">${esc(md.full_name || md.name || '')}</div><div class="mut">${esc(u.email || '')}</div></div></div><p class="mut">${t('gDoneN')}</p>
 <div class="mut" style="margin-bottom:6px">${t('iam')}</div>${['buyer', 'seller', 'rider'].map((r) => `<button class="opt" aria-pressed="${f.role == r}" data-a="grole" data-v="${r}">${t(r == 'buyer' ? 'roleB' : r == 'seller' ? 'roleS' : 'roleR')}</button>`).join('')}
-<label class="f" for="gn">${t('fname')}</label><input type="text" id="gn" maxlength="40" autocomplete="name" value="${esc(f.name)}" data-m="gf.name">
-${f.role == 'seller' ? `<label class="f" for="gb">${t('biz')}</label><input type="text" id="gb" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="gf.biz">` : ''}
-<label class="f" for="gy">${t('county')}</label><select id="gy" data-m="gf.y">${opts(COUNTIES.slice(1), f.y)}</select>
-<label class="f" for="gp">${t('lphone')}</label><input type="tel" id="gp" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(f.phone)}" data-m="gf.phone"><div class="mut">${t('gPhoneN')}</div>
+<label class="f" for="gn">${t('fname')}</label><input type="text" id="gn" maxlength="40" autocomplete="name" value="${esc(f.name)}" data-m="gg.name">
+${f.role == 'seller' ? `<label class="f" for="gb">${t('biz')}</label><input type="text" id="gb" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="gg.biz">` : ''}
+<label class="f" for="gy">${t('county')}</label><select id="gy" data-m="gg.y">${opts(COUNTIES.slice(1), f.y)}</select>
+<label class="f" for="gp">${t('lphone')}</label><input type="tel" id="gp" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(f.phone)}" data-m="gg.phone"><div class="mut">${t('gPhoneN')}</div>
 <button class="btn" data-a="gcomplete" ${S.busy ? 'disabled' : ''}>${t('gFinish')}</button><button class="lk" data-a="logout">${t('gOther')}</button></div>`;
   }
 
@@ -50,14 +50,14 @@ ${f.role == 'seller' ? `<label class="f" for="gb">${t('biz')}</label><input type
       const { error } = await sb.auth.linkIdentity({ provider: 'google', options: { redirectTo: redirectTo() } });
       if (error) { toast(t('gErr') + ' ' + error.message); S.busy = false; c.render(); }
     }),
-    grole: (d) => { S.gf.role = d.v; c.render(); },
+    grole: (d) => { S.gg.role = d.v; c.render(); },
     gcomplete: () => guarded(async () => {
-      const f = S.gf, ph = c.normPh(f.phone);
+      const f = S.gg, ph = c.normPh(f.phone);
       if (f.name.trim().length < 2) { toast(t('eName')); S.busy = false; return; }
       if (!ph) { toast(t('badph')); S.busy = false; return; }
       if (f.role == 'seller' && f.biz.trim().length < 2) { toast(t('eBiz')); S.busy = false; return; }
       const r = await rpc('complete_my_profile', { p_name: f.name.trim(), p_phone: ph, p_county: f.y, p_role: f.role, p_biz: f.biz.trim() });
-      if (!r.error) { S.gf = null; await c.refreshAll(); S.tab = f.role == 'rider' ? 'rides' : f.role == 'seller' ? 'sell' : 'shop'; toast(t('gWelcome')); }
+      if (!r.error) { S.gg = null; await c.refreshAll(); S.tab = f.role == 'rider' ? 'rides' : f.role == 'seller' ? 'sell' : 'shop'; toast(t('gWelcome')); }
       S.busy = false; c.render(); scrollTo(0, 0);
     }),
   };
