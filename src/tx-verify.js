@@ -1,7 +1,7 @@
 // Texts for the optional Verified Seller feature (English and Kiswahili).
 export const VTX = {
   en: {
-    vBadge: 'Verified seller', vBadgeH: 'Verified seller',
+    eTick: 'Names cannot contain check-mark symbols.', vBadge: 'Verified seller', vBadgeH: 'Verified seller',
     vBadgeP: 'Shamba Soko has reviewed this seller’s identity and business information: legal name, national ID, phone number, farm or business details and live photos. Verification is valid until {d}.',
     vBadgeN: 'Verification does not guarantee every product or delivery. Always check goods when you receive them and never share your M-Pesa PIN.',
     vGet: 'Get verified', vGetN: 'Optional. Get a blue tick beside your name so buyers know Shamba Soko has checked your identity and business. Fee: {f}. Selling stays free without it.',
@@ -22,14 +22,14 @@ export const VTX = {
     vConsent: 'I agree that Shamba Soko may collect and securely store my ID details and face photos to verify my identity. They are kept private, seen only by Shamba Soko admins, and I can ask for them to be deleted at any time by contacting support. I confirm the details are true.',
     vSubmit: 'Submit application', vResubmit: 'Send updated application', vSent: 'Application sent. We will review it soon.',
     vNeed: 'Please complete all fields', vNeedPh: 'Please take all four photos', vNeedConsent: 'Please accept the consent statement', vBadId: 'Enter a valid ID number (5 to 12 letters and numbers)',
-    vStatus: 'Verification', vSt: { none: 'Not verified', pending: 'Under review', info_requested: 'More information needed', approved: 'Verified', rejected: 'Not approved', suspended: 'Suspended', revoked: 'Revoked', expired: 'Expired' },
+    vStatus: 'Verification', vSt: { none: 'Not verified', pending: 'Under review', info_requested: 'More information needed', approved: 'Verified', rejected: 'Not approved', suspended: 'Suspended', revoked: 'Revoked', withdrawn: 'Withdrawn', superseded: 'Replaced by renewal', expired: 'Expired' },
     vPaySt: { unpaid: 'Not paid', submitted: 'Payment sent, waiting for confirmation', confirmed: 'Payment confirmed', rejected: 'Payment not confirmed' },
     vValid: 'Valid until {d}', vRenew: 'Renew verification', vRenewN: 'Renewal needs fresh details and new live photos.',
     vAdminNote: 'Message from Shamba Soko', vUpdate: 'Update my application', vAddPay: 'Send payment details', vPaySent: 'Payment details sent',
     vSuspN: 'Your verification is suspended. Contact support on 0747 859 353.',
   },
   sw: {
-    vBadge: 'Muuzaji aliyethibitishwa', vBadgeH: 'Muuzaji aliyethibitishwa',
+    eTick: 'Majina hayawezi kuwa na alama ya tiki.', vBadge: 'Muuzaji aliyethibitishwa', vBadgeH: 'Muuzaji aliyethibitishwa',
     vBadgeP: 'Shamba Soko imekagua utambulisho na taarifa za biashara za muuzaji huyu: jina halali, kitambulisho, namba ya simu, taarifa za shamba au biashara na picha za moja kwa moja. Uthibitisho ni halali hadi {d}.',
     vBadgeN: 'Uthibitisho hauhakikishi kila bidhaa au usafirishaji. Kagua bidhaa unapopokea na usishiriki PIN yako ya M-Pesa.',
     vGet: 'Thibitishwa', vGetN: 'Hiari. Pata alama ya bluu kando ya jina lako ili wanunuzi wajue Shamba Soko imekagua utambulisho na biashara yako. Ada: {f}. Kuuza kunabaki bure bila hiyo.',
@@ -50,7 +50,7 @@ export const VTX = {
     vConsent: 'Nakubali Shamba Soko ikusanye na kuhifadhi kwa usalama taarifa za kitambulisho changu na picha za uso wangu ili kuthibitisha utambulisho wangu. Zinabaki siri, zinaonekana na wasimamizi wa Shamba Soko tu, na naweza kuomba zifutwe wakati wowote kwa kuwasiliana na msaada. Nathibitisha taarifa ni za kweli.',
     vSubmit: 'Tuma ombi', vResubmit: 'Tuma ombi lililosasishwa', vSent: 'Ombi limetumwa. Tutalikagua hivi karibuni.',
     vNeed: 'Tafadhali jaza sehemu zote', vNeedPh: 'Tafadhali piga picha zote nne', vNeedConsent: 'Tafadhali kubali taarifa ya ridhaa', vBadId: 'Weka namba sahihi ya kitambulisho (herufi na namba 5 hadi 12)',
-    vStatus: 'Uthibitisho', vSt: { none: 'Hajathibitishwa', pending: 'Linakaguliwa', info_requested: 'Taarifa zaidi zinahitajika', approved: 'Amethibitishwa', rejected: 'Halikuidhinishwa', suspended: 'Umesimamishwa', revoked: 'Umefutwa', expired: 'Umeisha muda' },
+    vStatus: 'Uthibitisho', vSt: { none: 'Hajathibitishwa', pending: 'Linakaguliwa', info_requested: 'Taarifa zaidi zinahitajika', approved: 'Amethibitishwa', rejected: 'Halikuidhinishwa', suspended: 'Umesimamishwa', revoked: 'Umefutwa', withdrawn: 'Umeondolewa', superseded: 'Umebadilishwa na upya', expired: 'Umeisha muda' },
     vPaySt: { unpaid: 'Haijalipwa', submitted: 'Malipo yametumwa, yanasubiri kuthibitishwa', confirmed: 'Malipo yamethibitishwa', rejected: 'Malipo hayajathibitishwa' },
     vValid: 'Halali hadi {d}', vRenew: 'Rudia uthibitisho', vRenewN: 'Kurudia kunahitaji taarifa mpya na picha mpya za moja kwa moja.',
     vAdminNote: 'Ujumbe kutoka Shamba Soko', vUpdate: 'Sasisha ombi langu', vAddPay: 'Tuma taarifa za malipo', vPaySent: 'Taarifa za malipo zimetumwa',

@@ -35,7 +35,7 @@ export function createVerify(c) {
   }
   async function signed(paths) {
     const need = paths.filter((p) => p && !S.vurls[p]); if (!need.length) return;
-    const { data } = await sb.storage.from(VBUCKET).createSignedUrls(need, 3600);
+    const { data } = await sb.storage.from(VBUCKET).createSignedUrls(need, 600);
     (data || []).forEach((r) => { if (r.signedUrl) S.vurls[r.path] = r.signedUrl; });
   }
   const effSt = (v) => (!v ? 'none' : v.status == 'approved' && v.expires_at && new Date(v.expires_at) < new Date() ? 'expired' : v.status);
@@ -95,7 +95,7 @@ ${upd && S.myv.payment_status == 'confirmed' ? '' : payBlock(true)}
 <button class="btn sun" data-a="vsubmit" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : upd ? t('vResubmit') : t('vSubmit')}</button>
 <button class="btn out" data-a="tab" data-v="account">← ${t('acct')}</button>`;
   }
-  const canApply = () => { const s = effSt(S.myv); return s == 'none' || s == 'rejected' || s == 'revoked' || s == 'expired' || (s == 'approved' && new Date(S.myv.expires_at) - Date.now() < 30 * 864e5); };
+  const canApply = () => { const s = effSt(S.myv); return s == 'none' || s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'expired' || (s == 'approved' && new Date(S.myv.expires_at) - Date.now() < 30 * 864e5); };
   function view() {
     if (!S.profile || S.profile.role != 'seller') { S.tab = 'account'; return c.V.account(); }
     const s = effSt(S.myv);
@@ -114,7 +114,7 @@ ${v.admin_note && s != 'approved' ? `<div class="note"><b>${t('vAdminNote')}:</b
 ${s == 'suspended' ? `<p class="mut">${t('vSuspN')}</p>` : ''}
 ${s == 'pending' && v.payment_status != 'confirmed' && v.payment_status != 'submitted' ? payBlock(false) + `<button class="btn" data-a="vaddpay">${t('vAddPay')}</button>` : ''}
 ${s == 'info_requested' ? `<button class="btn sun" data-a="vstart">${t('vUpdate')}</button>` : ''}
-${s == 'rejected' || s == 'revoked' || s == 'expired' || expSoon ? `<p class="mut">${t('vRenewN')}</p><button class="btn sun" data-a="vstart">✓ ${s == 'rejected' ? t('vGet') : t('vRenew')} · ${KES(S.vset.fee)}</button>` : ''}</div>`;
+${s == 'rejected' || s == 'revoked' || s == 'withdrawn' || s == 'expired' || expSoon ? `<p class="mut">${t('vRenewN')}</p><button class="btn sun" data-a="vstart">✓ ${s == 'rejected' ? t('vGet') : t('vRenew')} · ${KES(S.vset.fee)}</button>` : ''}</div>`;
   }
   // Admin dashboard section.
   function adminSection() {
@@ -123,10 +123,10 @@ ${s == 'rejected' || s == 'revoked' || s == 'expired' || expSoon ? `<p class="mu
     const sellerName = (v) => { const a = S.accounts.find((x) => x.id == v.seller); return a ? a.name : ''; };
     return `<h2 style="margin-top:18px">Seller verification</h2>
 <div class="card"><div class="pn">Settings</div><div class="row"><div><label class="f" for="vsfee">Fee (KSh)</label><input type="number" id="vsfee" min="0" max="100000" value="${S.vset.fee}"></div><div><label class="f" for="vsmon">Valid for (months)</label><input type="number" id="vsmon" min="1" max="36" value="${S.vset.months}"></div></div><label class="f" for="vsinfo">Payment instructions shown to sellers</label><input type="text" id="vsinfo" maxlength="500" value="${esc(S.vset.info)}"><button class="btn out" data-a="vsettings">Save settings</button></div>
-<div class="chips" role="group">${['pending', 'info_requested', 'approved', 'expired', 'suspended', 'rejected', 'revoked', 'all'].map((k) => `<button class="chip" aria-pressed="${S.vfilt == k}" data-a="vfilt" data-v="${k}">${k == 'all' ? 'All' : t('vSt')[k]} (${k == 'all' ? L.length : cnt(k)})</button>`).join('')}</div>
+<div class="chips" role="group">${['pending', 'info_requested', 'approved', 'expired', 'suspended', 'rejected', 'revoked', 'withdrawn', 'all'].map((k) => `<button class="chip" aria-pressed="${S.vfilt == k}" data-a="vfilt" data-v="${k}">${k == 'all' ? 'All' : t('vSt')[k]} (${k == 'all' ? L.length : cnt(k)})</button>`).join('')}</div>
 ${list.length ? list.map((v) => { const s = effSt(v); return `<div class="card"><div class="tr" style="padding-top:0"><b>${esc(v.legal_name)}</b><span class="bd ${s == 'approved' ? 'completed' : s == 'pending' || s == 'info_requested' ? 'pending' : 'cancelled'}">${t('vSt')[s]}</span></div>
 <div class="mut">Account: ${esc(sellerName(v))} · Applied ${c.fT(v.created_at)}</div>
-<div class="mut">📞 ${showPh(v.phone)} · ${t('vIdTypes')[v.id_type]} <b>${esc(v.id_number)}</b></div>
+<div class="mut">📞 ${showPh(v.phone)} · ${t('vIdTypes')[v.id_type]} <b>${esc(v.id_number)}</b></div>${L.some((o) => o.seller != v.seller && o.id_type == v.id_type && o.id_number == v.id_number) ? '<div class="warn">⚠ This ID number also appears on another seller’s application. Check carefully.</div>' : ''}
 <div class="mut">🏪 ${esc(v.business_name)} · 📍 ${esc(v.location)}, ${esc(v.county)}</div>
 <div class="mut">🧺 ${esc(v.products)}</div>
 <div class="mut">Consent given ${c.fT(v.consent_at)}</div>
@@ -205,8 +205,10 @@ ${adminActs(v, s)}
     vfilt: (d) => { S.vfilt = d.v; c.render(); },
     vphotos: () => guarded(async () => { await signed(S.vapps.flatMap((v) => SLOTS.map((k) => v.photos[k]))); S.busy = false; c.render(); }),
     vadm: (d) => guarded(async () => {
-      const note = (document.getElementById('vn-' + d.id) || {}).value || '';
-      if (!(await rpc('admin_verification_action', { p_id: +d.id, p_action: d.x, p_note: note.trim() })).error) { await Promise.all([loadApps(), loadVerified()]); toast(t('o_done')); S.busy = false; c.render(); }
+      const note = (document.getElementById('vn-' + d.id) || {}).value || '', v = S.vapps.find((x) => x.id == d.id); if (!v) return;
+      // p_seen: the database refuses the action if the application changed after this screen loaded it.
+      const r = await rpc('admin_verification_action', { p_id: v.id, p_action: d.x, p_note: note.trim(), p_seen: v.updated_at });
+      await Promise.all([loadApps(), loadVerified()]); S.busy = false; c.render(); if (!r.error) toast(t('o_done'));
     }),
     vsettings: () => guarded(async () => {
       const fee = Math.round(Number(document.getElementById('vsfee').value)), mon = Math.round(Number(document.getElementById('vsmon').value)), info = document.getElementById('vsinfo').value.trim();

@@ -42,6 +42,7 @@ const errMsg = (e) => {
   if (/already registered|already exists|duplicate/i.test(m)) return t('eTaken');
   if (/Invalid login/i.test(m)) return t('eBad');
   if (/rate limit|too many/i.test(m)) return t('eLock');
+  if (/no_tick/.test(m)) return t('eTick');
   return m || t('eErr');
 };
 
@@ -437,6 +438,7 @@ const A = {
     if (!S.user) return;
     const mine = S.listings.filter((p) => p.owner == S.user.id), files = mine.flatMap((p) => [...p.ph.map((x) => x.id), p.video]).filter(Boolean);
     if (files.length) await sb.storage.from(BUCKET).remove(files);
+    if ((await rpc('withdraw_my_verifications', {})).error) return; // closes open applications so their private photos can be deleted
     const vl = await sb.storage.from('verification-photos').list(S.user.id, { limit: 100 });
     if (vl.data && vl.data.length) await sb.storage.from('verification-photos').remove(vl.data.map((x) => S.user.id + '/' + x.name));
     if ((await rpc('delete_my_account', {})).error) return;
