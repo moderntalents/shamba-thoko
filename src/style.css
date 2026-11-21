@@ -84,3 +84,7 @@ h2 .vb{width:24px;height:24px;font-size:14px}
 .vthumb img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block}
 .pbox{border:2px solid var(--g);border-radius:12px;padding:10px 12px;margin:8px 0;background:var(--gl)}
 .pbnum{font-size:20px;letter-spacing:1px}
+/* WhatsApp contact (verified sellers who opt in) */
+.btn.wa{display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;background:#25D366;color:#0b2e16;border:0}
+.btn.wa.out{background:transparent;color:#128C3E;border:1px solid #25D366}
+.lk.sl{font-size:13px;min-height:24px;color:var(--mut)}

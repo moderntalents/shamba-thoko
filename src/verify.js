@@ -10,14 +10,15 @@ export function createVerify(c) {
   const fD = (d) => new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
   const fmt = (s, d) => s.replace('{d}', d).replace('{f}', KES(S.vset.fee));
   S.verified = new Map(); S.vset = { fee: 500, months: 12, info: '', paybill: '1315388', accRule: 'Your full name (as on your ID)' }; S.myv = null; S.vapps = []; S.vfilt = 'pending'; S.vurls = {};
-  S.vcases = {}; S.vblocks = []; S.vaudit = []; S.vqueue = 0; S.vnotes = [];
-  const blankVf = () => ({ legal: '', phone: '', idType: 'national_id', idNo: '', biz: '', y: 'Kiambu', loc: '', prod: '', ph: {}, pay: 'mpesa', code: '', consent: false });
+  S.vcases = {}; S.vblocks = []; S.vaudit = []; S.vqueue = 0; S.vnotes = []; S.wa = new Map();
+  const blankVf = () => ({ waMode: 'none', waNum: '', waPub: false, legal: '', phone: '', idType: 'national_id', idNo: '', biz: '', y: 'Kiambu', loc: '', prod: '', ph: {}, pay: 'mpesa', code: '', consent: false });
   S.vf = blankVf();
 
   // ------------------------------------------------------------ data
   async function loadVerified() {
-    const [v, st] = await Promise.all([sb.rpc('verified_sellers'), sb.from('app_settings').select('key,value')]);
+    const [v, st, w] = await Promise.all([sb.rpc('verified_sellers'), sb.from('app_settings').select('key,value'), sb.rpc('seller_whatsapp')]);
     if (!v.error) S.verified = new Map(v.data.map((r) => [r.seller, r.expires_at]));
+    if (!w.error) S.wa = new Map(w.data.map((r) => [r.seller, r.whatsapp]));
     if (!st.error) for (const r of st.data) {
       if (r.key == 'verification_fee') S.vset.fee = Number(r.value);
       if (r.key == 'verification_months') S.vset.months = Number(r.value);
@@ -105,6 +106,7 @@ export function createVerify(c) {
 <label class="f" for="vy">${t('county')}</label><select id="vy" data-m="vf.y">${opts(COUNTIES.slice(1), f.y)}</select>
 <label class="f" for="vlo">${t('vLoc')}</label><input type="text" id="vlo" maxlength="120" value="${esc(f.loc)}" data-m="vf.loc">
 <label class="f" for="vpr">${t('vProd')}</label><input type="text" id="vpr" maxlength="200" value="${esc(f.prod)}" data-m="vf.prod"></div>
+${waFields(f, 'vf')}
 <div class="card"><div class="pn">📷 ${t('vPhotos')}</div><p class="mut">${t('vPhotosN')}</p><div class="vgrid">${SLOTS.map((k, i) => { const p = f.ph[k]; return `<div class="vslot">${p ? `<img src="${p.u}" alt="${esc(t('vSlots')[k])}">` : `<div class="vph" aria-hidden="true">${i < 2 ? '🙂' : i == 2 ? '🧺' : '🧑‍🌾'}</div>`}<div class="mut">${i + 1}. ${t('vSlots')[k]}</div><button class="btn ${p ? 'out' : ''}" data-a="vcam" data-v="${k}">📷 ${p ? t('vRetake') : t('vTake')}</button></div>`; }).join('')}</div></div>
 ${upd && S.myv.payment_status == 'confirmed' ? '' : payBlock(true)}
 <label class="ck"><input type="checkbox" data-m="vf.consent" ${f.consent ? 'checked' : ''}><span>${t('vConsent')}</span></label>
@@ -118,6 +120,31 @@ ${upd && S.myv.payment_status == 'confirmed' ? '' : payBlock(true)}
     const s = effSt(S.myv);
     if (s == 'info_requested' || canApply()) return form();
     return `<h2>✓ ${t('vH')}</h2>${accountCard()}<button class="btn out" data-a="tab" data-v="account">← ${t('acct')}</button>`;
+  }
+  // ------------------------------------------------------------ optional WhatsApp contact (verified sellers who opt in)
+  const wa = (uid) => (uid && S.wa.has(uid) ? S.wa.get(uid) : '');
+  // Official click-to-chat link: https://wa.me/<number in international format, digits only>?text=<message>
+  const waHref = (num, item) => `https://wa.me/${num}?text=${encodeURIComponent(item ? fmt(t('waMsgItem')).replace('{i}', item) : t('waMsg'))}`;
+  const waBtn = (uid, item, cls = 'out') => { const n = wa(uid); return n ? `<a class="btn wa ${cls}" href="${esc(waHref(n, item))}" target="_blank" rel="noopener" aria-label="${t('waChat')}"><span aria-hidden="true">💬</span> WhatsApp</a>` : ''; };
+  function waFields(f, prefix, extra = '') {
+    const ph = S.profile ? showPh(S.profile.phone) : '';
+    return `<div class="card"><div class="pn">💬 ${t('waH')}</div><p class="mut">${t('waN')}</p>${['none', 'same', 'other'].map((k) => `<button class="opt" aria-pressed="${f.waMode == k}" data-a="wamode" data-v="${k}" data-p="${prefix}">${k == 'same' ? fmt(t('waSame')).replace('{p}', ph) : t(k == 'none' ? 'waNone' : 'waOther')}</button>`).join('')}${f.waMode == 'other' ? `<label class="f" for="${prefix}-wan">${t('waNum')}</label><input type="tel" id="${prefix}-wan" inputmode="tel" maxlength="16" value="${esc(f.waNum)}" data-m="${prefix}.waNum">` : ''}${f.waMode != 'none' ? `<label class="ck"><input type="checkbox" data-m="${prefix}.waPub" ${f.waPub ? 'checked' : ''}><span>${t('waPub')}</span></label>` : ''}${extra}</div>`;
+  }
+  const waState = () => { const p = S.profile || {}; return !p.whatsapp ? { waMode: 'none', waNum: '', waPub: false } : { waMode: p.whatsapp == p.phone ? 'same' : 'other', waNum: p.whatsapp == p.phone ? '' : showPh(p.whatsapp), waPub: !!p.whatsapp_public }; };
+  S.waf = null;
+  function waCard() {
+    if (!S.profile || S.profile.role != 'seller') return '';
+    if (!S.waf) S.waf = waState();
+    const live = wa(S.user.id);
+    return waFields(S.waf, 'waf', `<div class="mut">${live ? t('waLive') : S.verified.has(S.user.id) ? t('waOff') : t('waNeedVerify')}</div><button class="btn out" data-a="wasave">${t('waSave')}</button>`);
+  }
+  async function saveWa(f) {
+    const num = f.waMode == 'none' ? '' : f.waMode == 'same' ? S.profile.phone : f.waNum;
+    if (f.waMode == 'other' && !c.normPh(f.waNum)) { toast(t('waBad')); return false; }
+    const r = await rpc('set_my_whatsapp', { p_number: num, p_public: f.waMode != 'none' && !!f.waPub });
+    if (r.error) return false;
+    const { data } = await sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle(); if (data) S.profile = data;
+    await loadVerified(); S.waf = null; return true;
   }
   // Seller dashboard card in Account.
   function accountCard() {
@@ -217,7 +244,7 @@ ${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<butto
 
   // ------------------------------------------------------------ actions
   const fillFromProfile = () => {
-    const m = S.profile, prev = S.myv, f = blankVf();
+    const m = S.profile, prev = S.myv, f = { ...blankVf(), ...waState() };
     f.phone = showPh(m.phone); f.biz = m.biz || ''; f.y = m.county; f.legal = m.name;
     if (prev) { f.legal = prev.legal_name; f.phone = showPh(prev.phone); f.idType = prev.id_type; f.idNo = prev.id_number; f.biz = prev.business_name; f.y = prev.county; f.loc = prev.location; f.prod = prev.products; }
     return f;
@@ -253,6 +280,7 @@ ${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<butto
       const needPay = !(upd && S.myv.payment_status == 'confirmed');
       if (needPay && f.pay == 'mpesa' && !/^[A-Z0-9]{8,12}$/.test(f.code.trim().toUpperCase())) return toast(t('vCodeBad'));
       if (!f.consent) return toast(t('vNeedConsent'));
+      if (f.waMode == 'other' && !c.normPh(f.waNum)) return toast(t('waBad'));
       c.render();
       let up;
       try { up = await uploadPhotos(); } catch (e) { toast(errMsg(e)); S.busy = false; c.render(); return; }
@@ -260,6 +288,7 @@ ${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<butto
       if (needPay && f.pay != 'later') { p.payment_method = f.pay; if (f.pay == 'mpesa') p.mpesa_code = f.code.trim().toUpperCase(); }
       const r = upd ? await rpc('update_verification', { p_id: S.myv.id, p }) : await rpc('submit_verification', { p });
       if (r.error) { await sb.storage.from(VBUCKET).remove(up.done); S.busy = false; c.render(); return; }
+      await saveWa(f); // optional WhatsApp contact chosen on the form
       Object.values(f.ph).forEach((x) => URL.revokeObjectURL(x.u)); S.vf = blankVf();
       await loadMine(); toast(t('vSent')); S.busy = false; S.tab = 'account'; c.render(); scrollTo(0, 0);
     }),
@@ -269,6 +298,8 @@ ${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<butto
       if (!(await rpc('update_verification', { p_id: S.myv.id, p })).error) { await loadMine(); toast(t('vPaySent')); S.busy = false; c.render(); }
     }),
     vfilt: (d) => { S.vfilt = d.v; c.render(); },
+    wamode: (d) => { const f = d.p == 'vf' ? S.vf : S.waf; f.waMode = d.v; if (d.v == 'none') f.waPub = false; c.render(); },
+    wasave: () => guarded(async () => { if (await saveWa(S.waf)) toast(t('waSaved')); S.busy = false; c.render(); }),
     vpaydetails: () => guarded(async () => {
       const pb = document.getElementById('vspb').value.trim(), acc = document.getElementById('vsacc').value.trim();
       if (!(await rpc('admin_set_payment_details', { p_paybill: pb, p_account_rule: acc })).error) { await Promise.all([loadVerified(), loadApps()]); toast(t('o_done')); }
@@ -320,5 +351,5 @@ ${S.vblocks.some((b) => b.application_id == v.id && !b.lifted_at) ? '' : `<butto
     return `<div class="card"><div class="pn">🔔 ${t('vNotesH')}${u ? ` <span class="bd pending">${u}</span>` : ''}</div>${S.vnotes.slice(0, 5).map((n) => `<div class="tr"><div><div${n.read_at ? ' class="mut"' : ''}>${esc((t('nk') || {})[n.kind] || n.kind)}</div><div class="mut">${c.fT(n.created_at)}</div></div></div>`).join('')}${u ? `<button class="btn out" data-a="vread">${t('vNotesRead')}</button>` : ''}</div>`;
   }
   A.vread = () => guarded(async () => { if (!(await rpc('mark_notifications_read', {})).error) await loadMine(); S.busy = false; c.render(); });
-  return { loadVerified, loadMine, loadApps, badge, view, accountCard, adminSection, actions: A, stopCam, notesCard, unread };
+  return { loadVerified, loadMine, loadApps, badge, view, accountCard, adminSection, actions: A, stopCam, notesCard, unread, wa, waBtn, waCard };
 }

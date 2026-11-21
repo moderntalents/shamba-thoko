@@ -72,3 +72,11 @@ select id from public.profiles where phone = '2547XXXXXXXX';
 - Every action (submission, inspection, approval, block, hold, purge, file deletion) is written to an append-only, admin-only **audit trail**.
 - **Unanswered requests:** applications in "More information needed" close automatically after **90 days** without a response (not under legal hold). The seller gets in-app reminders **30 and 7 days** before closure and a notice when it closes, and can then apply again (unless suspended, within the 90-day revocation wait, or blocked).
 - **Consent wording** explains the retention periods, deletion requests, fraud investigations and legal holds. Notifications are in-app only; SMS or email needs a provider (for example Africa's Talking).
+
+### WhatsApp contact (optional, verified sellers)
+
+- Sellers can add a WhatsApp number (their phone number or a different one) in **Account → WhatsApp contact** or on the verification form, and choose whether to show it.
+- A green **WhatsApp** button appears on listings, the contact window and the seller's profile only when the seller is **verified**, has **entered a number** and **chose to show it**. It disappears automatically if verification ends.
+- The button uses the official click-to-chat link `https://wa.me/<number>?text=<message>`.
+- Only the seller's id and WhatsApp number are public (`seller_whatsapp()`); no ID or verification data.
+- Sellers without WhatsApp keep the normal phone contact.
