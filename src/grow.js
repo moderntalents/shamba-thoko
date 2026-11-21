@@ -31,7 +31,7 @@ export function createGrow(c) {
   const featuredIds = () => new Set(S.promos.filter((p) => p.service == 'featured').map((p) => p.listing_id));
   const isFeatured = (id) => featuredIds().has(id);
   function shopTop() {
-    const ads = S.promos.filter((p) => p.service == 'sponsored').sort(() => Math.random() - 0.5).slice(0, 2);
+    const ads = S.promos.filter((p) => p.service == 'sponsored').sort(() => Math.random() - 0.5); // every paid advert shows on every visit for its whole campaign; order rotates fairly
     const shops = S.promos.filter((p) => p.service == 'promoted_shop');
     return (ads.length ? ads.map((a) => `<div class="card ad"><div class="adl">${t('gSponsored')}</div><div class="pn">${esc(a.title)}</div><p class="mut" style="margin:2px 0">${esc(a.body)}</p><div class="mut">${esc(a.seller_name)}${VF.badge(a.seller)}</div>${a.listing_id ? `<button class="btn out" data-a="gopen" data-id="${a.listing_id}">${t('gView')}</button>` : `<button class="btn out" data-a="gshop" data-v="${esc(a.seller_name)}">${t('sSee')}</button>`}</div>`).join('') : '')
       + (shops.length ? `<div class="pshops"><div class="mut">${t('gPromotedShops')}</div><div class="chips">${shops.map((s) => `<button class="chip" data-a="gshop" data-v="${esc(s.seller_name)}" title="${esc(s.body)}">🏪 ${esc(s.seller_name)}${VF.badge(s.seller) ? ' ✓' : ''}</button>`).join('')}</div></div>` : '');
