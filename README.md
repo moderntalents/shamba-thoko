@@ -57,3 +57,16 @@ select id from public.profiles where phone = '2547XXXXXXXX';
 - Photos are in the private `verification-photos` bucket (seller and admins only). The badge comes only from approved, paid, unexpired applications; sellers cannot set it themselves.
 - Database: `supabase/migrations/20261121160000_seller_verification.sql` (additive).
 - Automatic M-Pesa confirmation (STK push) needs Safaricom Daraja credentials; until then admins confirm payments by checking the M-Pesa code.
+
+### Verification rules and data retention
+
+- **Revoked** sellers can apply again only after **90 days** (checked by account and by ID number).
+- Admins can **block** fraudulent sellers permanently (by account, phone and ID). Blocks survive account deletion; lifting a block needs a reason.
+- **Photo inspection:** the approving admin must open all four photos full size after the seller's latest change; the database refuses approval otherwise.
+- **Retention (automatic, nightly at 03:20 Nairobi time):**
+  - not approved (rejected, withdrawn): ID number and photos deleted 90 days after closing;
+  - approved: kept for the verification period plus 12 months after expiry;
+  - fraud: kept up to 5 years after closing; block identifiers redacted after 5 years.
+  - Never deleted automatically: open or suspended applications, and anything on **legal hold**.
+- Purging redacts ID number, phone, legal name and location and deletes the photo files through the Storage API (Edge Function `verification-retention`, called by `pg_cron` with a secret kept in the database vault). Admins can also run it from the dashboard.
+- Every action (submission, inspection, approval, block, hold, purge, file deletion) is written to an append-only, admin-only **audit trail**.
