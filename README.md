@@ -70,3 +70,5 @@ select id from public.profiles where phone = '2547XXXXXXXX';
   - Never deleted automatically: open or suspended applications, and anything on **legal hold**.
 - Purging redacts ID number, phone, legal name and location and deletes the photo files through the Storage API (Edge Function `verification-retention`, called by `pg_cron` with a secret kept in the database vault). Admins can also run it from the dashboard.
 - Every action (submission, inspection, approval, block, hold, purge, file deletion) is written to an append-only, admin-only **audit trail**.
+- **Unanswered requests:** applications in "More information needed" close automatically after **90 days** without a response (not under legal hold). The seller gets in-app reminders **30 and 7 days** before closure and a notice when it closes, and can then apply again (unless suspended, within the 90-day revocation wait, or blocked).
+- **Consent wording** explains the retention periods, deletion requests, fraud investigations and legal holds. Notifications are in-app only; SMS or email needs a provider (for example Africa's Talking).
