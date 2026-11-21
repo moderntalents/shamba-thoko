@@ -1,0 +1,17 @@
+export const CATS = ['all', 'produce', 'seedling', 'input'];
+export const COUNTIES = ['All', 'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet', 'Embu', 'Garissa', 'Homa Bay', 'Isiolo', 'Kajiado', 'Kakamega', 'Kericho', 'Kiambu', 'Kilifi', 'Kirinyaga', 'Kisii', 'Kisumu', 'Kitui', 'Kwale', 'Laikipia', 'Lamu', 'Machakos', 'Makueni', 'Mandera', 'Marsabit', 'Meru', 'Migori', 'Mombasa', "Murang'a", 'Nairobi', 'Nakuru', 'Nandi', 'Narok', 'Nyamira', 'Nyandarua', 'Nyeri', 'Samburu', 'Siaya', 'Taita-Taveta', 'Tana River', 'Tharaka-Nithi', 'Trans-Nzoia', 'Turkana', 'Uasin Gishu', 'Vihiga', 'Wajir', 'West Pokot'];
+export const TABS = [['shop', '🛒'], ['prices', '📈'], ['doctor', '🩺'], ['sell', '➕'], ['cart', '🧺']];
+export const EMO = { produce: '🧺', seedling: '🌱', input: '📦' };
+
+// Guide prices (shown with a note that they are not today's official prices).
+export const PRICES = [['Tomatoes', 'Wakulima, Nairobi', 85, 6], ['Sukuma wiki', 'Marikiti', 28, -4], ['Onions', 'Nakuru', 90, 3], ['Maize (dry)', 'Eldoret', 55, 0], ['Potatoes', 'Nyeri', 48, -8], ['Eggs (tray)', 'Kisumu', 410, 2]];
+
+export const DOC = {
+  Tomato: [['Brown spots with yellow rings on leaves', 'Early blight', 'Remove affected leaves, avoid watering from above, and use a PCPB-registered copper fungicide as the label directs.', 'input', 'fungicide'], ['Plant wilts suddenly, stem is brown inside', 'Bacterial wilt', 'Uproot and burn the plant. Do not replant tomatoes, potatoes or peppers there for 2 to 3 seasons. Start with clean seedlings.', 'seedling', '']],
+  Maize: [['Holes in leaves, sawdust-like droppings in the whorl', 'Fall armyworm', 'Scout early. Ask your extension officer which registered product to use and how to apply it safely.', 'input', ''], ['Pale yellow leaves, stunted growth', 'Nutrient shortage', 'Apply fertilizer or well-rotted manure. A soil test will confirm what is missing.', 'input', 'fertilizer']],
+  'Sukuma wiki': [['Curling leaves with sticky insects underneath', 'Aphids', 'Spray soapy water or neem first. Use a registered pesticide only if the attack is severe, following the label.', 'input', '']],
+};
+
+export const DEL = { boda: ['🏍️ Boda rider', 150, 'Small orders, about 30 to 60 minutes'], truck: ['🚚 Pickup truck', 600, 'Bulk loads and sacks'], self: ['🚶 I will collect', 0, 'Free, pick up from the seller'] };
+
+export const LEGAL = `<h2>Help &amp; legal</h2><div class="note"><b>Draft text.</b> Have these terms reviewed before wide launch.</div><h3>Terms</h3><p class="mut">Sellers must describe goods honestly and sell only lawful items. Agrochemicals must be PCPB-registered and in original labelled packs. Payments are arranged directly between buyer and seller outside Shamba Soko, which does not process, hold or guarantee payments or refunds. Problems can be reported from the order within 48 hours of delivery.</p><h3>Privacy</h3><p class="mut">We collect your name, phone number, county and delivery address only to run your account and complete orders. Your phone number is shared only with the other person in an order or a seller you choose to contact. We keep data no longer than needed and never sell it. You can delete your account at any time from Account. (Kenya Data Protection Act, 2019.)</p><h3>Safety tips</h3><p class="mut">Meet or receive goods in daylight. Confirm delivery only after you have checked the goods. Never share your M-Pesa PIN or OTP with anyone, including sellers or riders.</p><h3>Support</h3><p class="mut">Call or WhatsApp 0747 859 353.</p>`;
