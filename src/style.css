@@ -69,3 +69,14 @@ details summary{cursor:pointer;min-height:44px;display:flex;align-items:center;c
 .bd{display:inline-block;border-radius:10px;padding:0 10px;font-size:12px;font-weight:700;margin-right:6px}.bd.pending{background:var(--sun);color:#222}.bd.confirmed{background:var(--gl);color:var(--g);border:1px solid var(--g)}.bd.completed{background:var(--g);color:var(--on)}.bd.cancelled{border:1px solid var(--red);color:var(--red)}nav button{min-width:0;padding:0 2px}
 :focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+/* Verified seller blue tick */
+.vb{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;min-height:20px;margin-left:4px;padding:0;border:0;border-radius:50%;background:#1D9BF0;color:#fff;font-size:12px;font-weight:800;line-height:1;vertical-align:middle;cursor:pointer;position:relative}
+button.vb::after{content:"";position:absolute;inset:-12px}
+h2 .vb{width:24px;height:24px;font-size:14px}
+.vgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
+.vslot{display:flex;flex-direction:column;gap:4px;min-width:0}
+.vslot img,.vph{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:36px}
+.vslot .btn{margin-top:auto}
+.vcam{width:100%;max-height:60vh;border-radius:10px;background:#000;display:block}
+.vcam.mirror{transform:scaleX(-1)}
+@media(min-width:620px){.vgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
