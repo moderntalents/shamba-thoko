@@ -201,7 +201,7 @@ begin
   if v.id is null then raise exception 'application not found' using errcode = 'P0002'; end if;
   if v.seller = (select auth.uid()) then raise exception 'admins cannot review their own application' using errcode = '42501'; end if;
   if p_seen is null or date_trunc('milliseconds', v.updated_at) <> date_trunc('milliseconds', p_seen) then
-    raise exception 'this application changed: reload and check it again' using errcode = '40001';
+    raise exception 'this application changed: reload and check it again' using errcode = 'P0001'; -- not 40001: the API would retry it forever
   end if;
 
   if p_action = 'confirm_payment' and v.payment_status <> 'confirmed' and v.status in ('pending', 'info_requested') then
