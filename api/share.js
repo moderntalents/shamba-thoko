@@ -1,6 +1,9 @@
 // Share previews for /p/<id> and /shop/<seller>. Social apps (WhatsApp, Facebook, TikTok) do not run the
 // app's JavaScript, so this adds the product's title, description and photo as Open Graph tags to the
 // normal page. Only public data is read (with the public key, so hidden listings stay hidden); no phone numbers.
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 const SB = process.env.VITE_SUPABASE_URL || 'https://nskbksmguplcdchbbxje.supabase.co';
 const KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_stVo5g5OaNn4MvqP9t5aww_SHzrvw0t';
 const SITE = 'https://www.shambasoko.store';
@@ -47,11 +50,11 @@ export function inject(html, m) {
 export default async function handler(req, res) {
   const type = req.query.type == 'shop' ? 'shop' : 'p', id = String(req.query.id || '');
   let m; try { m = await meta(type, id); } catch (e) { m = await meta('', ''); }
-  let html;
+  let html = null;
+  try { html = await readFile(join(process.cwd(), 'dist', 'index.html'), 'utf8'); } catch (e) { /* not bundled: fetch it */ }
   try {
-    const r = await fetch(`https://${req.headers.host}/index.html`);
-    if (!r.ok) throw new Error('index ' + r.status);
-    html = await r.text();
+    if (!html) { const r = await fetch(`https://${req.headers.host}/index.html`); if (r.ok) html = await r.text(); }
+    if (!html || !html.includes('id="view"')) throw new Error('app page not available');
   } catch (e) { // fallback: preview tags and a link into the app
     html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shamba Soko</title><meta name="description" content=""><meta http-equiv="refresh" content="0;url=/?r=${encodeURIComponent(type + '/' + id)}"></head><body><a href="/">Shamba Soko</a></body></html>`;
   }
