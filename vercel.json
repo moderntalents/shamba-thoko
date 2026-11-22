@@ -17,5 +17,16 @@
     "api/share.js": {
       "includeFiles": "dist/index.html"
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    }
+  ]
 }

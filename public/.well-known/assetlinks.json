@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.shambasoko.app",
+      "sha256_cert_fingerprints": [
+        "DD:DE:72:39:A6:8E:35:08:17:B0:C7:C7:92:9C:59:04:F5:A9:1B:52:CB:12:B5:13:22:5F:B7:FC:A7:22:12:98"
+      ]
+    }
+  }
+]

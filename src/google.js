@@ -7,6 +7,10 @@ export function createGoogle(c) {
   const { S, t, esc, sb, toast, rpc, guarded, opts, COUNTIES } = c;
   S.gg = null;
   const redirectTo = () => location.origin + location.pathname; // return to the same page (e.g. /admin)
+  // Android app (Play Store): Google does not allow sign-in inside an app's web view, so the sign-in page opens in
+  // the phone's browser. Google then returns to www.shambasoko.store, which Android opens back in the app (verified app link).
+  const inApp = /ShambaSokoApp/.test(navigator.userAgent);
+  const openInBrowser = (url) => { S.busy = false; location.href = url; }; // the app opens other websites in the phone's browser
   const hasGoogle = () => !!(S.user && (S.user.identities || []).some((i) => i.provider == 'google'));
   const needsProfile = () => !!(S.user && !S.profile);
 
@@ -43,13 +47,15 @@ ${f.role == 'seller' ? `<label class="f" for="gb">${t('biz')}</label><input type
 
   const A = {
     google: () => guarded(async () => {
-      const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo(), queryParams: { prompt: 'select_account' } } });
-      if (error) { toast(t('gErr') + ' ' + error.message); S.busy = false; c.render(); }
+      const { data, error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo(), queryParams: { prompt: 'select_account' }, skipBrowserRedirect: inApp } });
+      if (error) { toast(t('gErr') + ' ' + error.message); S.busy = false; c.render(); return; }
+      if (inApp) openInBrowser(data.url);
       // On success the browser goes to Google and comes back to this site.
     }),
     glink: () => guarded(async () => {
-      const { error } = await sb.auth.linkIdentity({ provider: 'google', options: { redirectTo: redirectTo() } });
-      if (error) { toast(t('gErr') + ' ' + error.message); S.busy = false; c.render(); }
+      const { data, error } = await sb.auth.linkIdentity({ provider: 'google', options: { redirectTo: redirectTo(), skipBrowserRedirect: inApp } });
+      if (error) { toast(t('gErr') + ' ' + error.message); S.busy = false; c.render(); return; }
+      if (inApp) openInBrowser(data.url);
     }),
     grole: (d) => { S.gg.role = d.v; c.render(); },
     gcomplete: () => guarded(async () => {
