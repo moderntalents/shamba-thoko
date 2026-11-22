@@ -130,7 +130,8 @@ function chrome() {
   b.setAttribute('aria-label', m ? t('acct') + ': ' + m.name : lbl);
   const mb = $('#mnu'); mb.setAttribute('aria-label', t('menu')); mb.title = t('menu');
   b.toggleAttribute('aria-current', S.tab == 'account');
-  $('#nav').innerHTML = navTabs().map(([k, i]) => `<button data-a="tab" data-v="${k}" ${k == S.tab ? 'aria-current="page"' : ''}><span aria-hidden="true">${i}</span>${t(k)}${k == 'cart' && cnt() ? `<b aria-label="${cnt()}">${cnt()}</b>` : k == 'orders' && pendN() ? `<b aria-label="${pendN()}">${pendN()}</b>` : k == 'rides' && rideN() ? `<b aria-label="${rideN()}">${rideN()}</b>` : ''}</button>`).join('');
+  const hb = $('#home'); if (hb) hb.setAttribute('aria-label', t('home') + ': Shamba Soko');
+  $('#nav').innerHTML = navTabs().map(([k, i]) => `<button data-a="tab" data-v="${k}" ${k == S.tab ? 'aria-current="page"' : ''}><span aria-hidden="true">${k == 'shop' ? '🏠' : i}</span>${k == 'shop' ? t('home') : t(k)}${k == 'cart' && cnt() ? `<b aria-label="${cnt()}">${cnt()}</b>` : k == 'orders' && pendN() ? `<b aria-label="${pendN()}">${pendN()}</b>` : k == 'rides' && rideN() ? `<b aria-label="${rideN()}">${rideN()}</b>` : ''}</button>`).join('');
 }
 function render() {
   if (S.tab == 'admin' && !isAdmin()) S.tab = 'shop';
@@ -315,6 +316,8 @@ const A = {
   lang: () => { menu(false); S.lang = S.lang == 'en' ? 'sw' : 'en'; save(); render(); },
   info: () => { menu(false); dlgOpen(LEGAL); },
   menu: () => menu(),
+  // Home: the logo, the title and the first tab all go back to the start of the shop.
+  home: () => { menu(false); S.q = ''; S.cat = 'all'; S.cty = 'All'; S.tab = 'shop'; render(); scrollTo(0, 0); },
   close: () => $('#dlg').close(),
   report: (d) => guarded(async () => {
     if (d.id == '-1') return toast(t('pvonly'));

@@ -71,13 +71,13 @@ export const GGTX = {
     gDoneH: 'Finish creating your account', gDoneN: 'You signed in with Google. Add your phone number and county so buyers, sellers and riders can reach you.',
     gPhoneN: 'Your phone number is shown to the people you trade with, as with every Shamba Soko account.', gFinish: 'Finish sign-up', gOther: 'Use a different account',
     gWelcome: 'Welcome to Shamba Soko!', gLinkH: 'Google sign-in', gLinkN: 'Connect your Google account to sign in with Google as well as your phone number and password.',
-    gLink: 'Connect Google', gLinked: 'Connected: you can sign in with Google', menu: 'Menu', noaccQ: 'New to Shamba Soko?', haveaccQ: 'Already have an account?',
+    gLink: 'Connect Google', gLinked: 'Connected: you can sign in with Google', menu: 'Menu', noaccQ: 'New to Shamba Soko?', home: 'Home', haveaccQ: 'Already have an account?',
   },
   sw: {
     gCont: 'Endelea na Google', gUp: 'Jisajili na Google', gOr: 'au tumia namba yako ya simu', gErr: 'Kuingia kwa Google hakukufanikiwa:',
     gDoneH: 'Kamilisha akaunti yako', gDoneN: 'Umeingia kwa Google. Weka namba yako ya simu na kaunti ili wanunuzi, wauzaji na waendesha wakufikie.',
     gPhoneN: 'Namba yako ya simu inaonyeshwa kwa watu unaofanya biashara nao, kama kwa kila akaunti ya Shamba Soko.', gFinish: 'Kamilisha usajili', gOther: 'Tumia akaunti nyingine',
     gWelcome: 'Karibu Shamba Soko!', gLinkH: 'Kuingia kwa Google', gLinkN: 'Unganisha akaunti yako ya Google ili uingie kwa Google pamoja na namba yako ya simu na nenosiri.',
-    gLink: 'Unganisha Google', gLinked: 'Imeunganishwa: unaweza kuingia kwa Google', menu: 'Menyu', noaccQ: 'Mgeni Shamba Soko?', haveaccQ: 'Una akaunti tayari?',
+    gLink: 'Unganisha Google', gLinked: 'Imeunganishwa: unaweza kuingia kwa Google', menu: 'Menyu', noaccQ: 'Mgeni Shamba Soko?', home: 'Nyumbani', haveaccQ: 'Una akaunti tayari?',
   },
 };
