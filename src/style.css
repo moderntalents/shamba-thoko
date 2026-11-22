@@ -185,3 +185,27 @@ header h1 .brand:hover .logo{box-shadow:inset 0 0 0 1.5px var(--gold2),0 3px 10p
 /* Admin page (/admin): no shopping menu; the ☰ menu keeps language, settings and log out */
 .adm #nav{display:none}.adm body{padding-bottom:24px}.adm #mset{display:none}
 .adm header small{display:inline-block!important;margin:0 0 0 8px;vertical-align:middle;padding:2px 9px;border-radius:999px;background:var(--gold);color:#0A3220;font-weight:800;font-size:11px;letter-spacing:.04em;text-transform:uppercase}.adm .authalt{display:none}
+
+/* Admin sign-in screen (/admin, logged out): standalone dark screen, like the ASMG admin */
+.alog-on header,.alog-on #nav,.alog-on body::before{display:none}
+.alog-on body{padding:0;min-height:100vh;background:radial-gradient(120% 80% at 50% 0%,#1d2a3d 0%,#121a28 55%,#0d131e 100%);color:#e8eef5}
+.alog-on main{max-width:none;padding:0}
+.alog{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 16px;box-sizing:border-box}
+.alog-ic{display:grid;place-items:center;width:64px;height:64px;border-radius:16px;background:#0F5132;color:#fff;box-shadow:0 10px 24px -10px rgba(15,81,50,.9)}
+.alog h2{margin:18px 0 4px;font:800 26px/1.2 "Bricolage Grotesque",system-ui,sans-serif;color:#fff;text-align:center}
+.alog-sub{margin:0 0 30px;color:#9fb0c3;font-size:14px}
+.alog-card{width:100%;max-width:384px;box-sizing:border-box;padding:28px 24px 22px;border-radius:16px;background:rgba(36,47,64,.72);border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 50px -20px rgba(0,0,0,.7)}
+.alog-card label{display:block;margin:0 0 8px;font-weight:700;font-size:14px;color:#e8eef5}
+.alog-in{position:relative;margin-bottom:18px}
+.alog-in svg{position:absolute;left:14px;top:50%;width:18px;height:18px;transform:translateY(-50%);fill:none;stroke:#9fb0c3;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.alog-in input{width:100%;box-sizing:border-box;height:48px;margin:0;padding:0 14px 0 44px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:#2a3546;color:#fff;font-size:15px}
+.alog-in input::placeholder{color:#7f8fa3}
+.alog-in input:focus{outline:none;border-color:#22a55b;box-shadow:0 0 0 3px rgba(34,165,91,.25)}
+.alog-card .alog-ck{display:flex;align-items:center;gap:10px;margin:-4px 0 6px;font-weight:500;color:#c8d3df}
+.alog-card .alog-ck input{width:18px;height:18px;margin:0}
+.alog-card .err{color:#ff9b8f;min-height:0;margin:4px 0}
+.alog-btn{width:100%;height:48px;margin-top:6px;border:0;border-radius:10px;background:#1b7a46;color:#fff;font-weight:800;font-size:15px;cursor:pointer}
+.alog-btn:hover{background:#1f8b50}.alog-btn:disabled{opacity:.6}
+.alog-lk{display:block;margin:18px auto 0;background:none;border:0;color:#e8eef5;font-weight:700;font-size:14px;cursor:pointer}
+.alog-lk:hover{text-decoration:underline}
+.alog-btn:focus-visible,.alog-lk:focus-visible{outline:3px solid #F2B100;outline-offset:2px}

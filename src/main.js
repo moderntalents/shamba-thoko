@@ -140,6 +140,7 @@ function chrome() {
 const ADM = /^\/admin\/?$/.test(location.pathname);
 if (ADM) { document.documentElement.classList.add('adm'); document.title = 'Shamba Soko Admin'; }
 function render() {
+  document.documentElement.classList.toggle('alog-on', ADM && !S.user);
   // Admin page: admin login form, the dashboard, or an access-denied message. Never marketplace onboarding.
   if (ADM) S.tab = isAdmin() ? 'admin' : S.user ? 'notadmin' : 'account';
   if (S.tab == 'admin' && !isAdmin()) S.tab = 'shop';
@@ -269,8 +270,15 @@ ${VF.adminSection()}${GR.adminSection()}${RD.adminSection()}
   account: () => {
     const m = me(), f = S.af;
     if (!m && GG.needsProfile() && !ADM) return GG.completeView(); // signed in with Google, profile not finished yet
+    if (!m && ADM) { // Admin page: standalone sign-in screen (same login logic as the marketplace)
+      S.am = 'login'; const f = S.af;
+      return `<div class="alog"><div class="alog-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h2>${t('admTitle')}</h2><p class="alog-sub">Shamba Soko</p>
+<div class="alog-card" id="authf"><label for="ap">${t('admPhone')}</label><div class="alog-in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg><input type="tel" id="ap" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="0712345678" value="${esc(f.phone)}" data-m="af.phone"></div>
+<label for="aw">${t('pwl')}</label><div class="alog-in"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><input type="${S.spw ? 'text' : 'password'}" id="aw" maxlength="64" autocomplete="current-password" placeholder="••••••••" value="${esc(f.pw)}" data-m="af.pw"></div>
+<label class="alog-ck"><input type="checkbox" data-a-change="spw" ${S.spw ? 'checked' : ''}><span>${t('show')}</span></label><p class="err" id="aerr" role="alert"></p>
+<button class="alog-btn" data-a="auth" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : t('admSignIn')}</button><button class="alog-lk" data-a="forgot">${t('forgot')}</button></div></div>`;
+    }
     if (!m) {
-      if (ADM) S.am = 'login';
       const su = S.am == 'signup', pt = S.spw ? 'text' : 'password';
       return `${ADM ? `<div class="note">🛡️ ${t('admLoginN')}</div>` : ''}<h2>${ADM ? '🛡️ ' + t('admLogin') : su ? t('signup') : t('login')}</h2><div class="card" id="authf">${ADM ? '' : GG.button(su ? t('gUp') : t('gCont'))}${su && !ADM ? `<div class="mut" style="margin-bottom:6px">${t('iam')}</div>${['buyer', 'seller', 'rider'].map((r) => `<button class="opt" aria-pressed="${f.role == r}" data-a="role" data-v="${r}">${t(r == 'buyer' ? 'roleB' : r == 'seller' ? 'roleS' : 'roleR')}</button>`).join('')}<label class="f" for="an">${t('fname')}</label><input type="text" id="an" maxlength="40" autocomplete="name" value="${esc(f.name)}" data-m="af.name">${f.role == 'seller' ? `<label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz">` : ''}<label class="f" for="ay">${t('county')}</label><select id="ay" data-m="af.y">${opts(COUNTIES.slice(1), f.y)}</select>` : ''}<label class="f" for="ap">${t('lphone')}</label><input type="tel" id="ap" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(f.phone)}" data-m="af.phone"><label class="f" for="aw">${su ? t('pw') : t('pwl')}</label><input type="${pt}" id="aw" maxlength="64" autocomplete="${su ? 'new-password' : 'current-password'}" value="${esc(f.pw)}" data-m="af.pw">${su ? `<label class="f" for="aw2">${t('pw2')}</label><input type="${pt}" id="aw2" maxlength="64" autocomplete="new-password" value="${esc(f.pw2)}" data-m="af.pw2">` : ''}<label class="ck"><input type="checkbox" data-a-change="spw" ${S.spw ? 'checked' : ''}><span>${t('show')}</span></label><p class="err" id="aerr" role="alert"></p><button class="btn" data-a="auth" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : su ? t('signup') : t('login')}</button>${su ? '' : `<button class="lk forgot" data-a="forgot">🔑 ${t('forgot')}</button>`}<div class="authalt"><span>${su ? t('haveaccQ') : t('noaccQ')}</span><button class="btn out" data-a="goauth" data-v="${su ? 'login' : 'signup'}">${su ? t('login') : t('signup')}</button></div></div><div class="note">${t('accN')}</div>`;
     }
