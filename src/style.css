@@ -184,4 +184,4 @@ header h1 .brand:hover .logo{box-shadow:inset 0 0 0 1.5px var(--gold2),0 3px 10p
 
 /* Admin page (/admin): no shopping menu; the ☰ menu keeps language, settings and log out */
 .adm #nav{display:none}.adm body{padding-bottom:24px}.adm #mset{display:none}
-.adm header small{display:block!important;color:var(--gold2);font-weight:700}.adm .authalt{display:none}
+.adm header small{display:inline-block!important;margin:0 0 0 8px;vertical-align:middle;padding:2px 9px;border-radius:999px;background:var(--gold);color:#0A3220;font-weight:800;font-size:11px;letter-spacing:.04em;text-transform:uppercase}.adm .authalt{display:none}

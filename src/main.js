@@ -125,6 +125,7 @@ function chrome() {
   const vn = VF.unread();
   // Logged out: a clear "Log in / Sign up" button. Logged in: the existing account button.
   b.classList.toggle('lo', !m);
+  b.hidden = ADM && !m; // the admin page already shows its own login form
   const lbl = GG.needsProfile() ? t('gFinish') : t('lsu');
   b.textContent = m ? m.name.split(' ')[0] + (pn ? ' · ' + pn : '') + (vn ? ' 🔔' + vn : '') : lbl;
   b.setAttribute('aria-label', m ? t('acct') + ': ' + m.name : lbl);
@@ -137,7 +138,7 @@ function chrome() {
 }
 // Separate admin page: www.shambasoko.store/admin shows only the admin login and dashboard.
 const ADM = /^\/admin\/?$/.test(location.pathname);
-if (ADM) document.documentElement.classList.add('adm');
+if (ADM) { document.documentElement.classList.add('adm'); document.title = 'Shamba Soko Admin'; }
 function render() {
   if (ADM) S.tab = isAdmin() ? 'admin' : me() ? 'notadmin' : GG.needsProfile() ? 'account' : 'account';
   if (S.tab == 'admin' && !isAdmin()) S.tab = 'shop';
