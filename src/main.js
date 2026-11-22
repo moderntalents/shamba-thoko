@@ -130,6 +130,7 @@ function chrome() {
   b.setAttribute('aria-label', m ? t('acct') + ': ' + m.name : lbl);
   const mb = $('#mnu'); mb.setAttribute('aria-label', t('menu')); mb.title = t('menu');
   b.toggleAttribute('aria-current', S.tab == 'account');
+  $('#mset').textContent = t('settings');
   const lo = $('#mlo'); lo.hidden = !S.user; lo.textContent = t('logout');
   const hb = $('#home'); if (hb) hb.setAttribute('aria-label', t('home') + ': Shamba Soko');
   $('#nav').innerHTML = navTabs().map(([k, i]) => `<button data-a="tab" data-v="${k}" ${k == S.tab ? 'aria-current="page"' : ''}><span aria-hidden="true">${k == 'shop' ? '🏠' : i}</span>${k == 'shop' ? t('home') : t(k)}${k == 'cart' && cnt() ? `<b aria-label="${cnt()}">${cnt()}</b>` : k == 'orders' && pendN() ? `<b aria-label="${pendN()}">${pendN()}</b>` : k == 'rides' && rideN() ? `<b aria-label="${rideN()}">${rideN()}</b>` : ''}</button>`).join('');
@@ -318,6 +319,8 @@ const A = {
   info: () => { menu(false); dlgOpen(LEGAL); },
   menu: () => menu(),
   mlogout: () => { menu(false); A.logout(); },
+  settings: () => { menu(false); S.tab = 'settings'; render(); scrollTo(0, 0); },
+  setlang: (d) => { if (S.lang != d.v) { S.lang = d.v; save(); render(); } },
   // Home: the logo, the title and the first tab all go back to the start of the shop.
   home: () => { menu(false); S.q = ''; S.cat = 'all'; S.cty = 'All'; S.tab = 'shop'; render(); scrollTo(0, 0); },
   close: () => $('#dlg').close(),
@@ -489,6 +492,20 @@ Object.assign(A, GR.actions);
 // ------------------------------------------------------------------ riders and deliveries
 const RD = createRiders({ S, t, esc, KES, sb, toast, rpc, guarded, errMsg, VF, V, opts, COUNTIES, dlgOpen, fT: fTx, render: () => render() });
 V.rides = () => RD.dash();
+// Settings (☰ → Settings): language, account and sign-in options in one place. Reuses the existing cards.
+V.settings = () => {
+  const m = me(), opt = (v, l) => `<button class="opt" aria-pressed="${S.lang == v}" data-a="setlang" data-v="${v}">${l}</button>`;
+  let h = `<h2>⚙️ ${t('settings')}</h2><div class="card"><div class="pn">${t('setLang')}</div>${opt('en', 'English')}${opt('sw', 'Kiswahili')}</div>`;
+  if (m) {
+    h += `<div class="card"><div class="pn">${t('acct')}</div><div class="tr"><div><div>${esc(m.name)}${VF.badge(m.id)}</div><div class="mut">📞 ${showPh(m.phone)} · 📍 ${esc(m.county)} · ${t(m.role)}</div></div></div><button class="btn out" data-a="tab" data-v="account">${t('setOpenAcct')}</button></div>`;
+    h += GG.linkCard() + (m.role == 'seller' ? VF.waCard() : '');
+    h += `<div class="card"><div class="pn">${t('setHelp')}</div><button class="btn out" data-a="info">${t('info')}</button><button class="btn out" data-a="forgot">🔑 ${t('forgot')}</button></div>`;
+    h += `<button class="btn out" data-a="logout">${t('logout')}</button><button class="lk" data-a="delacc">${t('del')}</button>`;
+  } else {
+    h += `<div class="card"><div class="pn">${t('acct')}</div><p class="mut">${t('setGuest')}</p><button class="btn sun" data-a="acct">${t('lsu')}</button></div><div class="card"><div class="pn">${t('setHelp')}</div><button class="btn out" data-a="info">${t('info')}</button></div>`;
+  }
+  return h;
+};
 Object.assign(A, RD.actions);
 // ------------------------------------------------------------------ Google sign-in
 const GG = createGoogle({ S, t, esc, sb, toast, rpc, guarded, opts, COUNTIES, normPh, refreshAll: () => refreshAll(), render: () => render() });
