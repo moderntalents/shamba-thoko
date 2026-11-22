@@ -7,9 +7,12 @@ import { RTX } from './tx-riders.js';
 import { createRiders } from './riders.js';
 import { createGoogle, GGTX } from './google.js';
 import { createVerify } from './verify.js';
+import { STX } from './tx-social.js';
+import { createSocial } from './social.js';
 Object.assign(TX.en, VTX.en); Object.assign(TX.sw, VTX.sw);
 for (const l of ['en', 'sw']) { const { nkg, ...g } = GTX[l]; Object.assign(TX[l], g); TX[l].nk = { ...TX[l].nk, ...nkg }; }
 for (const l of ['en', 'sw']) Object.assign(TX[l], GGTX[l]);
+for (const l of ['en', 'sw']) Object.assign(TX[l], STX[l]);
 for (const l of ['en', 'sw']) { const { nkr, ...r } = RTX[l]; Object.assign(TX[l], r); TX[l].nk = { ...TX[l].nk, ...nkr }; }
 import { CATS, COUNTIES, TABS, EMO, PRICES, DOC, DEL, LEGAL } from './data.js';
 import { sb, BUCKET, mediaUrl, phoneEmail } from './supabase.js';
@@ -103,7 +106,7 @@ async function loadProfile() {
   S.profile = p.data || null;
   S.admin = !!a.data;
 }
-async function refreshAll() { await loadProfile(); await Promise.all([loadListings(), loadOrders(), loadAdmin(), VF.loadVerified(), VF.loadMine(), GR.loadPublic(), GR.loadMine(), GR.loadAdmin(), RD.loadMine(), RD.loadAdmin()]); }
+async function refreshAll() { await loadProfile(); await Promise.all([loadListings(), loadOrders(), loadAdmin(), VF.loadVerified(), VF.loadMine(), GR.loadPublic(), GR.loadMine(), GR.loadAdmin(), RD.loadMine(), RD.loadAdmin(), SO.loadAdmin()]); }
 
 // ------------------------------------------------------------------ helpers
 const all = () => S.listings.filter((p) => !p.hidden);
@@ -149,9 +152,11 @@ function render() {
   if (S.tab == 'orders' && !isSeller()) S.tab = 'shop';
   if ((S.tab == 'verify' && !isSeller() && !RD.isRider()) || (S.tab == 'grow' && !isSeller()) || (S.tab == 'rides' && !RD.isRider())) S.tab = 'account';
   if (S.tab != 'verify') VF.stopCam();
+  SO.syncUrl(ADM);
   chrome();
   $('#view').innerHTML = V[S.tab]();
   if (S.tab == 'shop') fill();
+  SO.after();
 }
 const needLogin = (after, msg) => { S.after = after; S.am = 'login'; S.tab = 'account'; render(); scrollTo(0, 0); toast(t(msg || 'needLogin')); };
 
@@ -179,7 +184,7 @@ const mediaOf = (p) => {
   const c = l.find((x) => x.id == p.cv) || l[0];
   return `<button class="cvb" data-a="photos" data-id="${p.id}" aria-label="${esc(p.n)}: ${l.length} photo${l.length > 1 ? 's' : ''}"><img src="${esc(c.u)}" loading="lazy" alt="${esc(p.n)}, ${ptg(p)}"><span class="tag">${ptg(p)}</span>${l.length > 1 ? `<span class="cnt">📷 ${l.length}</span>` : ''}</button>`;
 };
-const cardHtml = (p) => `<div class="card${GR.isFeatured(p.id) ? ' feat' : ''}">${GR.isFeatured(p.id) ? `<div class="ftag">${t('gFeatured')}</div>` : ''}${mediaOf(p)}<div class="pn">${esc(p.n)}</div><div class="mut"><button class="lk sl" data-a="sinfo" data-id="${p.id}">${esc(p.s)}</button>${VF.badge(p.owner)}</div><div class="mut">📍 ${esc(p.y)}</div><div class="mut">${p.owner && S.user && p.owner == S.user.id ? t('yours') : t('dlist')}</div>${p.chem ? `<div class="warn">⚠ ${t('chem')}</div>` : ''}<div class="price">${KES(p.p)} <span class="mut">/ ${esc(p.u)}</span></div>${p.vu ? `<button class="btn out" data-a="video" data-id="${p.id}">▶ ${t('vid')}</button>` : ''}<button class="btn" data-a="add" data-id="${p.id}">${t('add')}</button><button class="btn out" data-a="contact" data-id="${p.id}">📞 ${t('contact')}</button>${VF.waBtn(p.owner, p.n)}<button class="lk" data-a="report" data-id="${p.id}">${t('rep')}</button></div>`;
+const cardHtml = (p) => `<div class="card${GR.isFeatured(p.id) ? ' feat' : ''}">${GR.isFeatured(p.id) ? `<div class="ftag">${t('gFeatured')}</div>` : ''}${mediaOf(p)}<div class="pn">${esc(p.n)}</div><div class="mut"><button class="lk sl" data-a="sinfo" data-id="${p.id}">${esc(p.s)}</button>${VF.badge(p.owner)}</div><div class="mut">📍 ${esc(p.y)}</div><div class="mut">${p.owner && S.user && p.owner == S.user.id ? t('yours') : t('dlist')}</div>${p.chem ? `<div class="warn">⚠ ${t('chem')}</div>` : ''}<div class="price">${KES(p.p)} <span class="mut">/ ${esc(p.u)}</span></div>${p.vu ? `<button class="btn out" data-a="video" data-id="${p.id}">▶ ${t('vid')}</button>` : ''}<button class="btn" data-a="add" data-id="${p.id}">${t('add')}</button><button class="btn out" data-a="contact" data-id="${p.id}">📞 ${t('contact')}</button>${VF.waBtn(p.owner, p.n)}<button class="btn out" data-a="share" data-id="${p.id}">↗ ${t('shShare')}</button><button class="lk" data-a="report" data-id="${p.id}">${t('rep')}</button></div>`;
 const gal = (p, i) => {
   const l = p.prev || p.ph, c = l[i], pt = t('pts');
   return `<div class="gv"><h2>${esc(p.n)}</h2><img class="main" src="${esc(c.u)}" alt="${esc(p.n)}, photo ${i + 1} of ${l.length}, ${ptg(p)}"><div class="mut" style="margin:6px 0"><b>${ptg(p)}</b> · ${pt[c.k] || ''} · ${i + 1}/${l.length}</div><div class="th">${l.map((x, j) => `<button data-a="gal" data-i="${j}" aria-current="${j == i}" aria-label="Photo ${j + 1}"><img src="${esc(x.u)}" alt="" style="width:100%;height:100%;object-fit:cover"></button>`).join('')}</div><div class="note">${t('unv')}</div>${p.prev ? '' : `<label class="f" for="rr">${t('rwhy')}</label><select id="rr">${t('rs').map((x, j) => `<option value="${j}">${x}</option>`).join('')}</select><button class="btn out" data-a="rphoto" data-i="${i}">${t('rph')}</button>`}</div>`;
@@ -265,7 +270,7 @@ const V = {
 <h2 style="margin-top:18px">Reports</h2>${S.reports.length ? S.reports.map((r) => `<div class="card"><div class="pn">${esc(r.name)}</div><div class="mut">${r.kind} report${r.why ? ' · ' + esc(r.why) : ''} · ${fT(r.created_at)}</div>${r.kind == 'photo' ? `<img src="${esc(mediaUrl(r.photo))}" alt="Reported photo" class="thm"><button class="btn" data-a="rph" data-id="${r.id}">Remove photo</button>` : ''}${r.kind != 'order' ? `<button class="btn" data-a="rhide" data-id="${r.id}">Hide listing</button>` : ''}<button class="btn out" data-a="rdis" data-id="${r.id}">Dismiss</button></div>`).join('') : '<p class="mut">No open reports.</p>'}
 <h2 style="margin-top:18px">All listings</h2><div class="card">${L.length ? L.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${esc(p.s)} · ${esc(p.y)} · ${KES(p.p)}${p.chem ? ' · ⚠ agrochemical' : ''}${p.ph.length ? ' · 📷 ' + p.ph.length : ''}${p.hidden ? ' · hidden' : ''}</div></div><button class="chip" data-a="${p.hidden ? 'unhide' : 'hide'}" data-id="${p.id}">${p.hidden ? 'Unhide' : 'Hide'}</button></div>`).join('') : '<p class="mut">No listings yet.</p>'}</div>
 <h2 style="margin-top:18px">Accounts</h2>${S.accounts.length ? `<div class="card">${S.accounts.map((a) => `<div class="tr"><div><div class="pn">${esc(a.name)} <span class="badge">${a.role}</span></div><div class="mut">${maskPh(a.phone)} · ${esc(a.county)}${a.biz ? ' · ' + esc(a.biz) : ''}</div></div></div>`).join('')}</div>` : '<p class="mut">No accounts yet.</p>'}
-${VF.adminSection()}${GR.adminSection()}${RD.adminSection()}
+${VF.adminSection()}${GR.adminSection()}${SO.adminSection()}${RD.adminSection()}
 <h2 style="margin-top:18px">Orders (${S.orders.length})</h2>${ofChips(S.orders)}${(() => { const l = fOrders(S.orders); return l.length ? l.map((o) => orderCard(o, 'a')).join('') : `<p class="mut">${t('o_none2')}</p>`; })()}
 <button class="btn out" data-a="tab" data-v="shop">← Back to shop</button>`;
   },
@@ -287,7 +292,7 @@ ${VF.adminSection()}${GR.adminSection()}${RD.adminSection()}
     const mine = S.listings.filter((p) => p.owner == m.id), so = S.orders.filter((o) => o.sl == m.id), bo = S.orders.filter((o) => o.b == m.id);
     return `<h2>${t('acct')}</h2><div class="card"><div class="pn">${esc(m.name)}${VF.badge(m.id)} <span class="badge">${t(m.role)}</span>${isAdmin() ? ` <span class="badge">${t('admin')}</span>` : ''}</div>${m.biz ? `<div class="mut">🏪 ${esc(m.biz)}</div>` : ''}<div class="mut">📞 ${showPh(m.phone)}</div><div class="mut">📍 ${esc(m.county)}</div><div class="mut">${t('since')} ${new Date(m.created_at).toLocaleDateString('en-KE')}</div></div>${isAdmin() ? `<button class="btn sun" data-a="admin">🛡️ ${t('adminD')}</button>` : ''}` +
       (m.role == 'rider' ? `${VF.notesCard()}${RD.accountCard()}` : m.role == 'buyer' ? `${VF.notesCard()}<div class="card"><div class="pn">${t('become')}</div><p class="mut">${t('becomeN')}</p><label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz"><button class="btn sun" data-a="become">${t('become')}</button></div>` :
-        `${VF.notesCard()}${GR.accountButton()}${VF.accountCard()}${VF.waCard()}<h2 style="margin-top:18px">${t('myl')}</h2><div class="card">${mine.length ? mine.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}${p.hidden ? ' · ' + t('hid') : ''}</div>${RD.listingChips(p)}</div><button class="chip" data-a="rml" data-id="${p.id}">${t('prm')}</button></div>`).join('') : `<p class="mut">${t('nol')}</p>`}<button class="btn" data-a="tab" data-v="sell">➕ ${t('sellH')}</button></div><h2 style="margin-top:18px">${t('soldH')}</h2><button class="btn out" data-a="tab" data-v="orders">📋 ${t('orders')} (${so.length})</button>`) +
+        `${VF.notesCard()}${GR.accountButton()}${SO.shopButton()}${VF.accountCard()}${VF.waCard()}<h2 style="margin-top:18px">${t('myl')}</h2><div class="card">${mine.length ? mine.map((p) => `<div class="tr"><div><div class="pn"><span aria-hidden="true">${p.e}</span> ${esc(p.n)}</div><div class="mut">${KES(p.p)} / ${esc(p.u)}${p.hidden ? ' · ' + t('hid') : ''}</div>${RD.listingChips(p)}</div><button class="chip" data-a="rml" data-id="${p.id}">${t('prm')}</button></div>`).join('') : `<p class="mut">${t('nol')}</p>`}<button class="btn" data-a="tab" data-v="sell">➕ ${t('sellH')}</button></div><h2 style="margin-top:18px">${t('soldH')}</h2><button class="btn out" data-a="tab" data-v="orders">📋 ${t('orders')} (${so.length})</button>`) +
       `<h2 style="margin-top:18px">${t('ord')}</h2>${bo.length ? `<button class="btn out" data-a="tab" data-v="cart">${t('ord')} (${bo.length}) →</button>` : `<p class="mut">${t('noord')}</p>`}${GG.linkCard()}<button class="btn out" data-a="logout" style="margin-top:14px">${t('logout')}</button><button class="lk" data-a="delacc">${t('del')}</button><div class="note">${t('accN')}</div>`;
   },
 };
@@ -506,6 +511,11 @@ Object.assign(A, VF.actions);
 const GR = createGrow({ S, t, esc, KES, sb, toast, rpc, guarded, VF, V, fT: fTx, render: () => render() });
 V.grow = () => GR.view();
 Object.assign(A, GR.actions);
+// ------------------------------------------------------------------ sharing links and admin social media
+const SO = createSocial({ S, t, esc, KES, sb, toast, rpc, guarded, VF, mediaUrl, dlgOpen, fT: fTx, TX, cardHtml: (p) => cardHtml(p), render: () => render() });
+V.item = () => SO.itemView();
+V.shopv = () => SO.shopView();
+Object.assign(A, SO.actions);
 // ------------------------------------------------------------------ riders and deliveries
 const RD = createRiders({ S, t, esc, KES, sb, toast, rpc, guarded, errMsg, VF, V, opts, COUNTIES, dlgOpen, fT: fTx, render: () => render() });
 V.rides = () => RD.dash();
@@ -534,7 +544,7 @@ GG.readRedirectError();
 
 async function reloadOrders() {
   const a = document.activeElement;
-  await Promise.all([loadOrders(), loadAdmin(), VF.loadMine(), GR.loadMine(), GR.loadAdmin(), RD.loadMine(), RD.loadAdmin()]);
+  await Promise.all([loadOrders(), loadAdmin(), VF.loadMine(), GR.loadMine(), GR.loadAdmin(), RD.loadMine(), RD.loadAdmin(), SO.loadAdmin()]);
   if (['orders', 'account', 'cart', 'admin', 'grow', 'rides'].includes(S.tab) && !(a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) && !$('#dlg').open) render(); else chrome();
 }
 

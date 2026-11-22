@@ -1,3 +1,7 @@
 {
-  "rewrites": [{ "source": "/admin", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/p/:id", "destination": "/api/share?type=p&id=:id" },
+    { "source": "/shop/:id", "destination": "/api/share?type=shop&id=:id" }
+  ]
 }
