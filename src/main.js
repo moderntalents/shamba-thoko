@@ -94,6 +94,8 @@ async function loadProfile() {
   const { data: { session } } = await sb.auth.getSession();
   S.user = session ? session.user : null;
   if (!S.user) { S.profile = null; S.admin = false; return; }
+  // Fresh user details from the server, so newly connected sign-in methods (e.g. Google) show straight away.
+  try { const { data: u } = await sb.auth.getUser(); if (u && u.user) S.user = u.user; } catch (e) { /* keep the stored session */ }
   const [p, a] = await Promise.all([
     sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle(),
     sb.from('admins').select('user_id').eq('user_id', S.user.id).maybeSingle(),
