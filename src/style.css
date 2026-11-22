@@ -223,3 +223,8 @@ textarea{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:1
 .socap{white-space:pre-wrap;font-size:14px;overflow-wrap:anywhere}
 .soact{display:grid;grid-template-columns:1fr 1fr;gap:6px}.soed{margin:8px 0}.soed summary{cursor:pointer;font-weight:700;color:var(--g);min-height:32px}
 @media(max-width:520px){.sopv{grid-template-columns:1fr}.sopv img{max-width:240px}}
+/* Official logo image in the header (shown exactly as supplied; only its display size changes) */
+header .brand-img{display:block;flex:none;height:72px;width:auto;border-radius:10px}
+html:not(.adm) header .wm{display:none}
+@media (max-width:600px){header .brand-img{height:60px}}
+@media (max-width:370px){header .brand-img{height:52px}}
