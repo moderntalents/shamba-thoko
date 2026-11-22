@@ -223,3 +223,12 @@ textarea{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:1
 .socap{white-space:pre-wrap;font-size:14px;overflow-wrap:anywhere}
 .soact{display:grid;grid-template-columns:1fr 1fr;gap:6px}.soed{margin:8px 0}.soed summary{cursor:pointer;font-weight:700;color:var(--g);min-height:32px}
 @media(max-width:520px){.sopv{grid-template-columns:1fr}.sopv img{max-width:240px}}
+/* Logo in the header: the green-background version of the brand logo (ring + seedling, "Shamba" white, "Soko" gold) */
+header .logo{width:46px;height:46px;border-radius:50%;background:none;box-shadow:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+header .logo svg{width:100%;height:100%}
+header h1 .brand:hover .logo{box-shadow:none;transform:scale(1.04)}
+header .logo{transition:transform .15s}
+header .wm-s{color:#F2B100}
+@media (max-width:600px){header .logo{width:40px;height:40px}}
+@media (max-width:370px){header .logo{width:34px;height:34px}}
+@media (prefers-reduced-motion:reduce){header .logo{transition:none}}
