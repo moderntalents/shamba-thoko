@@ -223,4 +223,3 @@ textarea{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:1
 .socap{white-space:pre-wrap;font-size:14px;overflow-wrap:anywhere}
 .soact{display:grid;grid-template-columns:1fr 1fr;gap:6px}.soed{margin:8px 0}.soed summary{cursor:pointer;font-weight:700;color:var(--g);min-height:32px}
 @media(max-width:520px){.sopv{grid-template-columns:1fr}.sopv img{max-width:240px}}
-header .wm .tom{height:.86em;width:auto;margin:0 .03em 0 .05em;vertical-align:-.1em}
