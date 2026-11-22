@@ -118,7 +118,7 @@ const navTabs = () => (isSeller() ? [...TABS.slice(0, 4), ['orders', '📋']] : 
 
 function chrome() {
   document.documentElement.lang = S.lang == 'sw' ? 'sw' : 'en';
-  $('#tag').textContent = t('tag'); $('#inf').textContent = t('info');
+  $('#tag').textContent = ADM ? t('admTag') : t('tag'); $('#inf').textContent = t('info');
   const l = $('#lg'); l.textContent = t('lg'); l.setAttribute('aria-label', t('lgl')); $('#cl').textContent = t('cl');
   const m = me(), b = $('#ac'), pn = pendN();
   $('header').classList.toggle('li', !!m);
@@ -135,7 +135,11 @@ function chrome() {
   const hb = $('#home'); if (hb) hb.setAttribute('aria-label', t('home') + ': Shamba Soko');
   $('#nav').innerHTML = navTabs().map(([k, i]) => `<button data-a="tab" data-v="${k}" ${k == S.tab ? 'aria-current="page"' : ''}><span aria-hidden="true">${k == 'shop' ? '🏠' : i}</span>${k == 'shop' ? t('home') : t(k)}${k == 'cart' && cnt() ? `<b aria-label="${cnt()}">${cnt()}</b>` : k == 'orders' && pendN() ? `<b aria-label="${pendN()}">${pendN()}</b>` : k == 'rides' && rideN() ? `<b aria-label="${rideN()}">${rideN()}</b>` : ''}</button>`).join('');
 }
+// Separate admin page: www.shambasoko.store/admin shows only the admin login and dashboard.
+const ADM = /^\/admin\/?$/.test(location.pathname);
+if (ADM) document.documentElement.classList.add('adm');
 function render() {
+  if (ADM) S.tab = isAdmin() ? 'admin' : me() ? 'notadmin' : GG.needsProfile() ? 'account' : 'account';
   if (S.tab == 'admin' && !isAdmin()) S.tab = 'shop';
   if (S.tab == 'orders' && !isSeller()) S.tab = 'shop';
   if ((S.tab == 'verify' && !isSeller() && !RD.isRider()) || (S.tab == 'grow' && !isSeller()) || (S.tab == 'rides' && !RD.isRider())) S.tab = 'account';
@@ -264,8 +268,9 @@ ${VF.adminSection()}${GR.adminSection()}${RD.adminSection()}
     const m = me(), f = S.af;
     if (!m && GG.needsProfile()) return GG.completeView(); // signed in with Google, profile not finished yet
     if (!m) {
+      if (ADM) S.am = 'login';
       const su = S.am == 'signup', pt = S.spw ? 'text' : 'password';
-      return `<h2>${su ? t('signup') : t('login')}</h2><div class="card" id="authf">${GG.button(su ? t('gUp') : t('gCont'))}${su ? `<div class="mut" style="margin-bottom:6px">${t('iam')}</div>${['buyer', 'seller', 'rider'].map((r) => `<button class="opt" aria-pressed="${f.role == r}" data-a="role" data-v="${r}">${t(r == 'buyer' ? 'roleB' : r == 'seller' ? 'roleS' : 'roleR')}</button>`).join('')}<label class="f" for="an">${t('fname')}</label><input type="text" id="an" maxlength="40" autocomplete="name" value="${esc(f.name)}" data-m="af.name">${f.role == 'seller' ? `<label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz">` : ''}<label class="f" for="ay">${t('county')}</label><select id="ay" data-m="af.y">${opts(COUNTIES.slice(1), f.y)}</select>` : ''}<label class="f" for="ap">${t('lphone')}</label><input type="tel" id="ap" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(f.phone)}" data-m="af.phone"><label class="f" for="aw">${su ? t('pw') : t('pwl')}</label><input type="${pt}" id="aw" maxlength="64" autocomplete="${su ? 'new-password' : 'current-password'}" value="${esc(f.pw)}" data-m="af.pw">${su ? `<label class="f" for="aw2">${t('pw2')}</label><input type="${pt}" id="aw2" maxlength="64" autocomplete="new-password" value="${esc(f.pw2)}" data-m="af.pw2">` : ''}<label class="ck"><input type="checkbox" data-a-change="spw" ${S.spw ? 'checked' : ''}><span>${t('show')}</span></label><p class="err" id="aerr" role="alert"></p><button class="btn" data-a="auth" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : su ? t('signup') : t('login')}</button>${su ? '' : `<button class="lk forgot" data-a="forgot">🔑 ${t('forgot')}</button>`}<div class="authalt"><span>${su ? t('haveaccQ') : t('noaccQ')}</span><button class="btn out" data-a="goauth" data-v="${su ? 'login' : 'signup'}">${su ? t('login') : t('signup')}</button></div></div><div class="note">${t('accN')}</div>`;
+      return `${ADM ? `<div class="note">🛡️ ${t('admLoginN')}</div>` : ''}<h2>${ADM ? '🛡️ ' + t('admLogin') : su ? t('signup') : t('login')}</h2><div class="card" id="authf">${GG.button(su ? t('gUp') : t('gCont'))}${su ? `<div class="mut" style="margin-bottom:6px">${t('iam')}</div>${['buyer', 'seller', 'rider'].map((r) => `<button class="opt" aria-pressed="${f.role == r}" data-a="role" data-v="${r}">${t(r == 'buyer' ? 'roleB' : r == 'seller' ? 'roleS' : 'roleR')}</button>`).join('')}<label class="f" for="an">${t('fname')}</label><input type="text" id="an" maxlength="40" autocomplete="name" value="${esc(f.name)}" data-m="af.name">${f.role == 'seller' ? `<label class="f" for="ab">${t('biz')}</label><input type="text" id="ab" maxlength="40" autocomplete="organization" value="${esc(f.biz)}" data-m="af.biz">` : ''}<label class="f" for="ay">${t('county')}</label><select id="ay" data-m="af.y">${opts(COUNTIES.slice(1), f.y)}</select>` : ''}<label class="f" for="ap">${t('lphone')}</label><input type="tel" id="ap" inputmode="tel" autocomplete="tel" maxlength="16" value="${esc(f.phone)}" data-m="af.phone"><label class="f" for="aw">${su ? t('pw') : t('pwl')}</label><input type="${pt}" id="aw" maxlength="64" autocomplete="${su ? 'new-password' : 'current-password'}" value="${esc(f.pw)}" data-m="af.pw">${su ? `<label class="f" for="aw2">${t('pw2')}</label><input type="${pt}" id="aw2" maxlength="64" autocomplete="new-password" value="${esc(f.pw2)}" data-m="af.pw2">` : ''}<label class="ck"><input type="checkbox" data-a-change="spw" ${S.spw ? 'checked' : ''}><span>${t('show')}</span></label><p class="err" id="aerr" role="alert"></p><button class="btn" data-a="auth" ${S.busy ? 'disabled' : ''}>${S.busy ? '…' : su ? t('signup') : t('login')}</button>${su ? '' : `<button class="lk forgot" data-a="forgot">🔑 ${t('forgot')}</button>`}<div class="authalt"><span>${su ? t('haveaccQ') : t('noaccQ')}</span><button class="btn out" data-a="goauth" data-v="${su ? 'login' : 'signup'}">${su ? t('login') : t('signup')}</button></div></div><div class="note">${t('accN')}</div>`;
     }
     const mine = S.listings.filter((p) => p.owner == m.id), so = S.orders.filter((o) => o.sl == m.id), bo = S.orders.filter((o) => o.b == m.id);
     return `<h2>${t('acct')}</h2><div class="card"><div class="pn">${esc(m.name)}${VF.badge(m.id)} <span class="badge">${t(m.role)}</span>${isAdmin() ? ` <span class="badge">${t('admin')}</span>` : ''}</div>${m.biz ? `<div class="mut">🏪 ${esc(m.biz)}</div>` : ''}<div class="mut">📞 ${showPh(m.phone)}</div><div class="mut">📍 ${esc(m.county)}</div><div class="mut">${t('since')} ${new Date(m.created_at).toLocaleDateString('en-KE')}</div></div>${isAdmin() ? `<button class="btn sun" data-a="admin">🛡️ ${t('adminD')}</button>` : ''}` +
@@ -322,7 +327,7 @@ const A = {
   settings: () => { menu(false); S.tab = 'settings'; render(); scrollTo(0, 0); },
   setlang: (d) => { if (S.lang != d.v) { S.lang = d.v; save(); render(); } },
   // Home: the logo, the title and the first tab all go back to the start of the shop.
-  home: () => { menu(false); S.q = ''; S.cat = 'all'; S.cty = 'All'; S.tab = 'shop'; render(); scrollTo(0, 0); },
+  home: () => { if (ADM) { location.href = '/'; return; } menu(false); S.q = ''; S.cat = 'all'; S.cty = 'All'; S.tab = 'shop'; render(); scrollTo(0, 0); },
   close: () => $('#dlg').close(),
   report: (d) => guarded(async () => {
     if (d.id == '-1') return toast(t('pvonly'));
@@ -493,11 +498,13 @@ Object.assign(A, GR.actions);
 const RD = createRiders({ S, t, esc, KES, sb, toast, rpc, guarded, errMsg, VF, V, opts, COUNTIES, dlgOpen, fT: fTx, render: () => render() });
 V.rides = () => RD.dash();
 // Settings (☰ → Settings): language, account and sign-in options in one place. Reuses the existing cards.
+V.notadmin = () => `<h2>🛡️ ${t('admTag')}</h2><div class="card"><p>${t('admNo')}</p><button class="btn" data-a="logout">${t('logout')}</button><a class="btn out" style="display:block;text-align:center;text-decoration:none" href="/">${t('admBack')}</a></div>`;
 V.settings = () => {
   const m = me(), opt = (v, l) => `<button class="opt" aria-pressed="${S.lang == v}" data-a="setlang" data-v="${v}">${l}</button>`;
   let h = `<h2>⚙️ ${t('settings')}</h2><div class="card"><div class="pn">${t('setLang')}</div>${opt('en', 'English')}${opt('sw', 'Kiswahili')}</div>`;
   if (m) {
     h += `<div class="card"><div class="pn">${t('acct')}</div><div class="tr"><div><div>${esc(m.name)}${VF.badge(m.id)}</div><div class="mut">📞 ${showPh(m.phone)} · 📍 ${esc(m.county)} · ${t(m.role)}</div></div></div><button class="btn out" data-a="tab" data-v="account">${t('setOpenAcct')}</button></div>`;
+    if (isAdmin()) h += `<div class="card"><div class="pn">🛡️ ${t('admTag')}</div><p class="mut">www.shambasoko.store/admin</p><a class="btn sun" style="display:block;text-align:center;text-decoration:none" href="/admin">${t('admOpen')}</a></div>`;
     h += GG.linkCard() + (m.role == 'seller' ? VF.waCard() : '');
     h += `<div class="card"><div class="pn">${t('setHelp')}</div><button class="btn out" data-a="info">${t('info')}</button><button class="btn out" data-a="forgot">🔑 ${t('forgot')}</button></div>`;
     h += `<button class="btn out" data-a="logout">${t('logout')}</button><button class="lk" data-a="delacc">${t('del')}</button>`;
