@@ -1,7 +1,7 @@
 # Builds public/privacy.html and public/terms.html from the content below (one shared layout).
 import html
 UPDATED = "23 November 2026"
-OPERATOR = "[Registered business or owner name]"
+OPERATOR = "Modern Talents Hub"
 EMAIL = "moderntalentshub@gmail.com"
 PHONE = "0747 859 353"
 
@@ -59,7 +59,8 @@ footer{{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--mut);font-
 '''
 
 PRIVACY = f'''
-<p>This policy explains what personal data Shamba Soko collects, why, who can see it, how long we keep it and the rights you have under Kenya's <b>Data Protection Act, 2019</b>. Shamba Soko is a farm marketplace at <a href="https://www.shambasoko.store">www.shambasoko.store</a> and in the Shamba Soko Android app. It is operated by <b>{OPERATOR}</b> ("we", "us"), who is the data controller.</p>
+<p>This policy explains what personal data Shamba Soko collects, why, who can see it, how long we keep it and the rights you have under Kenya's <b>Data Protection Act, 2019</b>. Shamba Soko is a farm marketplace at <a href="https://www.shambasoko.store">www.shambasoko.store</a> and in the Shamba Soko Android app. It is operated by <b>{OPERATOR}</b>, a registered business in Kenya ("we", "us"), which is the data controller for Shamba Soko.</p>
+<p>This policy covers Shamba Soko only. Other services run by {OPERATOR} have their own privacy policies.</p>
 <p class="toc"><a href="#collect">What we collect</a><a href="#use">How we use it</a><a href="#see">Who can see it</a><a href="#providers">Service providers</a><a href="#keep">How long we keep it</a><a href="#rights">Your rights</a><a href="#delete">Delete your account</a><a href="#contact">Contact</a></p>
 
 <h2 id="collect">1. What we collect</h2>
@@ -162,7 +163,7 @@ PRIVACY = f'''
 PRIV_SW = "Tunakusanya jina, namba ya simu, kaunti na taarifa za oda ili kuendesha akaunti yako na kukamilisha oda. Namba yako ya simu inaonekana tu kwa mtu mnayefanya biashara naye. Taarifa za kitambulisho na picha za uthibitisho (alama ya bluu) ni siri na zinaonekana na wasimamizi tu, na hufutwa kwa muda uliowekwa. Hatuuzi taarifa zako. Unaweza kufuta akaunti yako wakati wowote kwenye Akaunti. Kwa msaada: 0747 859 353."
 
 TERMS = f'''
-<p>These terms apply when you use Shamba Soko at <a href="https://www.shambasoko.store">www.shambasoko.store</a> or in the Shamba Soko Android app. Shamba Soko is operated by <b>{OPERATOR}</b> ("we", "us"). By creating an account or using Shamba Soko you agree to these terms and to our <a href="/privacy">privacy policy</a>.</p>
+<p>These terms apply when you use Shamba Soko at <a href="https://www.shambasoko.store">www.shambasoko.store</a> or in the Shamba Soko Android app. Shamba Soko is operated by <b>{OPERATOR}</b>, a registered business in Kenya ("we", "us"). These terms cover Shamba Soko only; other services run by {OPERATOR} have their own terms. By creating an account or using Shamba Soko you agree to these terms and to our <a href="/privacy">privacy policy</a>.</p>
 <p class="toc"><a href="#what">What Shamba Soko is</a><a href="#accounts">Accounts</a><a href="#sellers">Sellers</a><a href="#buyers">Orders and payments</a><a href="#riders">Riders</a><a href="#paid">Paid services</a><a href="#conduct">Rules</a><a href="#liability">Liability</a></p>
 
 <h2 id="what">1. What Shamba Soko is</h2>
