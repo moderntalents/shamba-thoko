@@ -1,0 +1,233 @@
+# Builds public/privacy.html and public/terms.html from the content below (one shared layout).
+import html
+UPDATED = "23 November 2026"
+OPERATOR = "[Registered business or owner name]"
+EMAIL = "moderntalentshub@gmail.com"
+PHONE = "0747 859 353"
+
+def page(title, desc, path, body, sw_summary):
+    return f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title} | Shamba Soko</title>
+<meta name="description" content="{html.escape(desc)}">
+<meta name="theme-color" content="#0F5132">
+<link rel="canonical" href="https://www.shambasoko.store{path}">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&display=swap">
+<style>
+:root{{--bg:#F7F8F3;--card:#fff;--tx:#17241b;--mut:#55655a;--bd:#d5dcd0;--g:#0F5132;--gl:#e3f1e8;--sun:#F2B100;color-scheme:light}}
+@media(prefers-color-scheme:dark){{:root{{--bg:#101712;--card:#18221b;--tx:#edf3ee;--mut:#a6b8ab;--bd:#2f3f33;--g:#4cc084;--gl:#1d3326;color-scheme:dark}}}}
+*{{box-sizing:border-box}}
+body{{margin:0;background:var(--bg);color:var(--tx);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}}
+header{{background:linear-gradient(135deg,#167A4C,#0A3220);border-bottom:3px solid var(--sun);padding:12px 16px}}
+header a{{display:inline-flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font:800 21px "Bricolage Grotesque",system-ui,sans-serif}}
+header a span b{{color:var(--sun);font-weight:800}}
+main{{max-width:760px;margin:0 auto;padding:20px 16px 60px}}
+h1{{font:800 30px/1.15 "Bricolage Grotesque",system-ui,sans-serif;margin:8px 0 4px}}
+h2{{font:800 21px/1.25 "Bricolage Grotesque",system-ui,sans-serif;margin:30px 0 8px;scroll-margin-top:12px}}
+h3{{font-size:16px;margin:18px 0 4px}}
+p,li{{max-width:68ch}} ul{{padding-left:22px}} li{{margin:4px 0}}
+a{{color:var(--g)}}
+.upd{{color:var(--mut);font-size:14px;margin:0 0 16px}}
+.box{{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 16px;margin:14px 0}}
+.sw{{background:var(--gl);border-color:transparent}}
+.toc a{{display:inline-block;margin:2px 10px 2px 0}}
+table{{border-collapse:collapse;width:100%;font-size:14.5px;margin:8px 0;display:block;overflow-x:auto}}
+th,td{{border:1px solid var(--bd);padding:8px 10px;text-align:left;vertical-align:top}}
+th{{background:var(--gl)}}
+footer{{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--mut);font-size:14px}}
+.back{{display:inline-block;margin-top:24px;background:var(--g);color:#fff;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:10px}}
+@media(prefers-color-scheme:dark){{.back{{color:#06140b}}}}
+</style>
+</head>
+<body>
+<header><a href="/" aria-label="Shamba Soko home"><svg width="34" height="34" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="53" fill="none" stroke="#F2B100" stroke-width="9"/><path d="M60 98V54" stroke="#fff" stroke-width="8" stroke-linecap="round"/><path d="M60 60c0-22 13-35 34-36-1 22-14 35-34 36z" fill="#F2B100"/><path d="M60 72c0-18-11-29-29-30 0 18 11 29 29 30z" fill="#fff"/></svg><span>Shamba <b>Soko</b></span></a></header>
+<main>
+<h1>{title}</h1>
+<p class="upd">Last updated: {UPDATED}</p>
+<div class="box sw" lang="sw"><b>Kwa ufupi (Kiswahili)</b><br>{sw_summary}</div>
+{body}
+<a class="back" href="/">Back to Shamba Soko</a>
+</main>
+<footer><a href="/privacy">Privacy policy</a> · <a href="/terms">Terms of use</a> · Support: <a href="tel:+254747859353">{PHONE}</a> · <a href="mailto:{EMAIL}">{EMAIL}</a></footer>
+</body>
+</html>
+'''
+
+PRIVACY = f'''
+<p>This policy explains what personal data Shamba Soko collects, why, who can see it, how long we keep it and the rights you have under Kenya's <b>Data Protection Act, 2019</b>. Shamba Soko is a farm marketplace at <a href="https://www.shambasoko.store">www.shambasoko.store</a> and in the Shamba Soko Android app. It is operated by <b>{OPERATOR}</b> ("we", "us"), who is the data controller.</p>
+<p class="toc"><a href="#collect">What we collect</a><a href="#use">How we use it</a><a href="#see">Who can see it</a><a href="#providers">Service providers</a><a href="#keep">How long we keep it</a><a href="#rights">Your rights</a><a href="#delete">Delete your account</a><a href="#contact">Contact</a></p>
+
+<h2 id="collect">1. What we collect</h2>
+<h3>When you create an account</h3>
+<ul>
+<li>Your name, phone number, county and whether you are a buyer, seller or rider.</li>
+<li>Sellers: your business (shop) name.</li>
+<li>A password, if you sign up with your phone number. Passwords are handled by our login provider (Supabase Auth); we cannot see them.</li>
+<li>If you use <b>Sign in with Google</b>: your Google account email, name and Google account ID. We do not get your Google password or access to your Gmail, contacts or files.</li>
+</ul>
+<h3>When you use the marketplace</h3>
+<ul>
+<li><b>Listings (sellers):</b> product name, category, price, unit, county, photos and an optional video. Photos are re-saved by the app before upload, which removes hidden location (GPS) data from them.</li>
+<li><b>Orders (buyers):</b> the items you order, your name, the phone number and delivery address you enter, and the order's progress.</li>
+<li><b>WhatsApp number (sellers, optional):</b> if you add one and choose to show it, buyers can contact you on WhatsApp.</li>
+<li><b>Reports and disputes:</b> what you report about a listing, photo or order, and any note you add.</li>
+<li><b>Riders:</b> vehicle type and details, base location, the areas you cover, whether you are available, and the deliveries you accept.</li>
+</ul>
+<h3>Verified Seller and Verified Rider (optional)</h3>
+<p>If you apply for the blue tick, we collect, with your consent: your legal name, phone, ID type and ID number, business name, county, location, the products you sell, four photos taken in the app (face front, face side, your products, and you with your products), and your payment details for the fee (M-Pesa transaction code and payer name). These are private and seen only by Shamba Soko administrators.</p>
+<h3>Paid promotions (optional)</h3>
+<p>If you buy a promotion (Featured product, Sponsored advert or Promoted shop), we keep the request, the text you write, the price, the M-Pesa transaction code and payer name, and the promotion dates.</p>
+<h3>On your device</h3>
+<p>The app keeps your language choice, your cart and your login session in your browser or phone storage so you stay signed in. We do not use advertising or tracking cookies, and we do not show ads from other companies.</p>
+
+<h2 id="use">2. How we use your data, and why we are allowed to</h2>
+<table>
+<tr><th>Use</th><th>Lawful basis (Data Protection Act, 2019)</th></tr>
+<tr><td>Create and run your account, show your listings, place and track orders, arrange deliveries</td><td>Needed to provide the service you asked for (contract)</td></tr>
+<tr><td>Check the identity of Verified Sellers and Riders and prevent fraud</td><td>Your consent, and our legitimate interest in a safe marketplace</td></tr>
+<tr><td>Confirm M-Pesa payments for verification and promotions</td><td>Contract, and legal record-keeping</td></tr>
+<tr><td>Handle reports and disputes, hide unsafe listings, suspend accounts that break the rules</td><td>Legitimate interest in keeping the marketplace safe</td></tr>
+<tr><td>Send you notices inside the app about your orders, deliveries, verification and promotions</td><td>Contract</td></tr>
+<tr><td>Share an <b>approved, paid promotion</b> (product name, price, county, shop name, photo and a link) on Shamba Soko's social media pages</td><td>Contract: it is part of the promotion you paid for. We never share your phone number, ID or address this way.</td></tr>
+</table>
+<p>We do not sell your personal data, and we do not use it for automated decisions that have legal effects on you.</p>
+
+<h2 id="see">3. Who can see your data</h2>
+<ul>
+<li><b>Everyone:</b> listings (product, price, county, photos, video) and the seller's shop name; whether a seller is verified; approved promotions.</li>
+<li><b>The other person in an order:</b> the seller sees the buyer's name, phone number and delivery address; the buyer sees the seller's name and contact.</li>
+<li><b>Signed-in buyers who tap "Contact seller":</b> the seller's phone number, and their WhatsApp number if the seller chose to show it.</li>
+<li><b>A rider chosen for a delivery:</b> the pickup county, the delivery address and the items. Once the rider accepts the delivery, the rider, buyer and seller can see each other's names and phone numbers to complete it.</li>
+<li><b>Shamba Soko administrators:</b> account details, orders, reports, verification applications and photos, and payment records, only to run and protect the service.</li>
+<li><b>Authorities:</b> if Kenyan law requires it, for example a court order.</li>
+</ul>
+
+<h2 id="providers">4. Service providers and where data is stored</h2>
+<p>We use these providers to run Shamba Soko. They process data on our behalf:</p>
+<ul>
+<li><b>Supabase</b>: database, file storage (photos) and logins.</li>
+<li><b>Vercel</b>: hosts the website.</li>
+<li><b>Google</b>: only if you choose Sign in with Google.</li>
+</ul>
+<p>These providers' servers may be outside Kenya. Where data is transferred outside Kenya, we do so as allowed by sections 48–50 of the Data Protection Act, 2019. M-Pesa payments are made directly to Safaricom; Shamba Soko never asks for or stores your M-Pesa PIN.</p>
+
+<h2 id="keep">5. How long we keep your data</h2>
+<ul>
+<li><b>Account, listings and photos:</b> until you delete your account or remove them.</li>
+<li><b>Orders:</b> kept as a trading record. If you delete your account, your name, phone number and address are removed from your orders.</li>
+<li><b>Verification (blue tick):</b> if you are not approved, your ID number and photos are deleted <b>90 days</b> after the application closes; if you are approved, they are kept while you are verified and for <b>12 months</b> after it ends; where fraud is suspected, records may be kept for up to <b>5 years</b>. These rules run automatically. When the period ends we delete the ID number, phone, legal name, location and photos and keep only an outline of the record.</li>
+<li><b>Payments for verification and promotions:</b> kept as financial records, even after you delete your account.</li>
+<li>We may keep data longer while an application is open, during a fraud investigation, or where the law requires it (a legal hold).</li>
+</ul>
+
+<h2 id="security">6. How we protect your data</h2>
+<ul>
+<li>Connections to Shamba Soko use HTTPS encryption.</li>
+<li>Database rules limit each person to their own data; only administrators can see verification files, which are kept in private storage.</li>
+<li>Administrator actions on verification and promotions are recorded in an audit log.</li>
+</ul>
+<p>No online service is completely secure. If a personal data breach puts you at risk, we will notify the Office of the Data Protection Commissioner and you as the law requires.</p>
+
+<h2 id="rights">7. Your rights</h2>
+<p>Under the Data Protection Act, 2019 you have the right to:</p>
+<ul>
+<li>be told how your data is used (this policy);</li>
+<li>see the personal data we hold about you;</li>
+<li>have wrong or incomplete data corrected;</li>
+<li>have your data deleted, subject to the record-keeping rules above;</li>
+<li>object to our use of your data, and withdraw consent at any time (for example, for verification);</li>
+<li>receive your data in a common format (data portability).</li>
+</ul>
+<p>To use these rights, contact us (section 10). We will reply within the time the law allows. If you are not satisfied, you can complain to the <b>Office of the Data Protection Commissioner (ODPC)</b>: <a href="https://www.odpc.go.ke" rel="noopener">www.odpc.go.ke</a>.</p>
+
+<h2 id="delete">8. Delete your account</h2>
+<p><b>In the app or website:</b> sign in, open <b>Account</b> (or ☰ → <b>Settings</b>) and tap <b>Delete my account</b>. Your account, profile and listings are deleted straight away, and your name, phone number and address are removed from your orders.</p>
+<p><b>If you cannot sign in:</b> call or WhatsApp {PHONE}, or email <a href="mailto:{EMAIL}?subject=Delete%20my%20Shamba%20Soko%20account">{EMAIL}</a> from the number or email on your account, and ask us to delete it.</p>
+<p>Some records are kept as explained in section 5 (verification records within their period, payment records, and anything under a legal hold). If your verification is suspended for investigation, contact support to delete your account.</p>
+
+<h2 id="children">9. Children</h2>
+<p>Shamba Soko is for adults. You must be 18 or older to create an account. We do not knowingly collect data from children; if you believe a child has an account, contact us and we will remove it.</p>
+
+<h2 id="contact">10. Contact us</h2>
+<p>{OPERATOR}, Shamba Soko<br>Phone / WhatsApp: <a href="tel:+254747859353">{PHONE}</a><br>Email: <a href="mailto:{EMAIL}">{EMAIL}</a></p>
+<h2 id="changes">11. Changes to this policy</h2>
+<p>If we change this policy, we will update the date at the top. If the change is important, we will tell you in the app.</p>
+'''
+
+PRIV_SW = "Tunakusanya jina, namba ya simu, kaunti na taarifa za oda ili kuendesha akaunti yako na kukamilisha oda. Namba yako ya simu inaonekana tu kwa mtu mnayefanya biashara naye. Taarifa za kitambulisho na picha za uthibitisho (alama ya bluu) ni siri na zinaonekana na wasimamizi tu, na hufutwa kwa muda uliowekwa. Hatuuzi taarifa zako. Unaweza kufuta akaunti yako wakati wowote kwenye Akaunti. Kwa msaada: 0747 859 353."
+
+TERMS = f'''
+<p>These terms apply when you use Shamba Soko at <a href="https://www.shambasoko.store">www.shambasoko.store</a> or in the Shamba Soko Android app. Shamba Soko is operated by <b>{OPERATOR}</b> ("we", "us"). By creating an account or using Shamba Soko you agree to these terms and to our <a href="/privacy">privacy policy</a>.</p>
+<p class="toc"><a href="#what">What Shamba Soko is</a><a href="#accounts">Accounts</a><a href="#sellers">Sellers</a><a href="#buyers">Orders and payments</a><a href="#riders">Riders</a><a href="#paid">Paid services</a><a href="#conduct">Rules</a><a href="#liability">Liability</a></p>
+
+<h2 id="what">1. What Shamba Soko is</h2>
+<p>Shamba Soko is a marketplace that connects buyers, sellers of farm produce, seedlings and farm inputs, and delivery riders in Kenya. Shamba Soko is not the seller of the goods and is not a party to the sale. The contract for each sale is between the buyer and the seller.</p>
+
+<h2 id="accounts">2. Accounts</h2>
+<ul>
+<li>You must be 18 or older and give true details (name, phone number, county).</li>
+<li>One person, one account. Keep your password private; you are responsible for activity on your account.</li>
+<li>Creating an account, listing products and buying are free.</li>
+<li>You can delete your account at any time from Account (see the <a href="/privacy#delete">privacy policy</a>).</li>
+</ul>
+
+<h2 id="sellers">3. Sellers</h2>
+<ul>
+<li>Describe goods honestly, with real photos and a fair price per stated unit, and sell only lawful goods.</li>
+<li>Agrochemicals must be registered with the Pest Control Products Board (PCPB) and sold in their original labelled packs.</li>
+<li>Confirm or decline orders promptly, and deliver what you confirmed.</li>
+<li>You keep ownership of your photos and text, and you allow Shamba Soko to show them on the marketplace and, for paid promotions, on Shamba Soko's social media pages.</li>
+</ul>
+
+<h2 id="buyers">4. Orders, payments and delivery</h2>
+<ul>
+<li>When you place an order, your name, phone number and delivery address are shared with the seller so they can complete it.</li>
+<li><b>Payments for goods are arranged directly between buyer and seller, outside Shamba Soko.</b> Shamba Soko does not process, hold or guarantee payments for goods, and does not issue refunds for them.</li>
+<li>Delivery is agreed between buyer, seller and rider, including who pays the rider. Shamba Soko does not charge a delivery fee.</li>
+<li>Check goods before confirming delivery. Problems can be reported from the order within <b>48 hours</b> of delivery; we review reports and may hide listings or suspend accounts.</li>
+</ul>
+
+<h2 id="riders">5. Riders</h2>
+<p>Riders are independent and not employed by Shamba Soko. Riders must hold any licences their vehicle requires, handle goods with care, and use customers' details only to complete the delivery.</p>
+
+<h2 id="paid">6. Paid services: Verified badge and promotions</h2>
+<ul>
+<li><b>Verified Seller / Verified Rider (blue tick):</b> optional. We check your identity using the details and photos you provide. The tick shows that identity checks were done; it is not a guarantee of the quality of goods or service. We may suspend or remove it if the rules are broken or fraud is suspected.</li>
+<li><b>Promotions</b> (Featured product, Sponsored advert, Promoted shop): optional. A request is reviewed and approved first; you then pay by M-Pesa Paybill and submit the transaction code. The promotion starts only after we confirm payment, and runs for the period shown at the time of the request.</li>
+<li>Prices are shown in the app before you pay. Fees for these services are not refundable once the service has started, unless the law requires otherwise or we end the service early without a reason related to your conduct.</li>
+<li>Never share your M-Pesa PIN or one-time codes with anyone, including sellers, riders or anyone claiming to be Shamba Soko.</li>
+</ul>
+
+<h2 id="conduct">7. Rules for everyone</h2>
+<ul>
+<li>No fake listings, fraud, harassment, or illegal, stolen or counterfeit goods.</li>
+<li>Do not misuse other people's phone numbers or addresses, or use them for anything other than the order.</li>
+<li>Do not try to break, overload or get around the security of the service.</li>
+</ul>
+<p>We may remove content, hide listings, or suspend or close accounts that break these rules.</p>
+
+<h2 id="safety">8. Safety tips</h2>
+<p>Meet or receive goods in daylight. Confirm delivery only after you have checked the goods. Never share your M-Pesa PIN or OTP with anyone.</p>
+
+<h2 id="liability">9. Limits of our responsibility</h2>
+<p>Shamba Soko provides the marketplace "as is". We do not guarantee the quality, safety or legality of goods listed by sellers, or the conduct of buyers, sellers or riders, and to the extent the law allows we are not liable for losses arising from trades between users. Nothing in these terms limits your rights under Kenyan consumer protection law.</p>
+
+<h2 id="law">10. Law and disputes</h2>
+<p>These terms are governed by the laws of Kenya. If you have a complaint, contact us first and we will try to resolve it.</p>
+
+<h2 id="changes">11. Changes</h2>
+<p>We may update these terms. We will change the date at the top and, for important changes, tell you in the app.</p>
+
+<h2 id="contact">12. Contact</h2>
+<p>Phone / WhatsApp: <a href="tel:+254747859353">{PHONE}</a> · Email: <a href="mailto:{EMAIL}">{EMAIL}</a></p>
+'''
+TERMS_SW = "Shamba Soko ni soko linalounganisha wanunuzi, wauzaji na waendesha. Malipo ya bidhaa hufanyika moja kwa moja kati ya mnunuzi na muuzaji; Shamba Soko haipokei wala haihakikishi malipo hayo. Wauzaji lazima waeleze bidhaa kwa ukweli na wauze bidhaa halali tu. Ripoti tatizo ndani ya saa 48 baada ya kupokea bidhaa. Usimpe mtu yeyote PIN yako ya M-Pesa."
+
+open('public/privacy.html', 'w').write(page('Privacy policy', 'How Shamba Soko collects, uses and protects your personal data under the Kenya Data Protection Act, 2019.', '/privacy', PRIVACY, PRIV_SW))
+open('public/terms.html', 'w').write(page('Terms of use', 'The rules for buying, selling and delivering on Shamba Soko.', '/terms', TERMS, TERMS_SW))
+print('built')
