@@ -6,7 +6,9 @@ const GLOGO = '<svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true
 export function createGoogle(c) {
   const { S, t, esc, sb, toast, rpc, guarded, opts, COUNTIES } = c;
   S.gg = null;
-  const redirectTo = () => location.origin + location.pathname; // return to the same page (e.g. /admin)
+  // Return to the same page (e.g. /admin). Inside the Android app the return goes through /app-return, the only
+  // website address the app opens; every other www.shambasoko.store link opens in the phone's browser.
+  const redirectTo = () => location.origin + (inApp ? '/app-return' + (location.pathname == '/' ? '' : location.pathname) : location.pathname);
   // Android app (Play Store): Google does not allow sign-in inside an app's web view, so the sign-in page opens in
   // the phone's browser. Google then returns to www.shambasoko.store, which Android opens back in the app (verified app link).
   const inApp = /ShambaSokoApp/.test(navigator.userAgent);

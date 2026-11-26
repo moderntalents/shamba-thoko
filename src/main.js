@@ -580,5 +580,13 @@ function subscribe() {
 sb.auth.onAuthStateChange((ev) => { if (ev == 'SIGNED_IN' || ev == 'SIGNED_OUT') setTimeout(subscribe, 0); });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { Promise.all([loadListings(), VF.loadVerified(), GR.loadPublic()]).then(() => { if (S.tab == 'shop') fill(); }); if (S.user) reloadOrders(); } });
 
+// Android app: Google sign-in comes back to /app-return (the only link the app opens). Finish the sign-in, then
+// continue to the real page (e.g. /admin), keeping any sign-in error message for readRedirectError.
+if (location.pathname.startsWith('/app-return')) {
+  const to = location.pathname.slice('/app-return'.length) || '/';
+  const err = /error/.test(location.search + location.hash) ? location.search + location.hash : '';
+  sb.auth.getSession().finally(() => location.replace(to + err));
+} else {
 render();
 refreshAll().then(() => { if (GG.needsProfile()) S.tab = 'account'; if (S.profile) { S.phone = showPh(S.profile.phone); S.f.y = S.profile.county; } subscribe(); render(); });
+}

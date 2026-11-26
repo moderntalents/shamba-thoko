@@ -13,6 +13,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/app-return",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/app-return/:path*",
+      "destination": "/index.html"
+    },
+    {
       "source": "/p/:id",
       "destination": "/api/share?type=p&id=:id"
     },
