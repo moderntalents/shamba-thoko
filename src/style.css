@@ -223,3 +223,13 @@ textarea{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:1
 .socap{white-space:pre-wrap;font-size:14px;overflow-wrap:anywhere}
 .soact{display:grid;grid-template-columns:1fr 1fr;gap:6px}.soed{margin:8px 0}.soed summary{cursor:pointer;font-weight:700;color:var(--g);min-height:32px}
 @media(max-width:520px){.sopv{grid-template-columns:1fr}.sopv img{max-width:240px}}
+
+/* Android app download: menu link and banner */
+.hb .hm a.mapp{display:flex;white-space:nowrap;font-weight:700;align-items:center;min-height:46px;padding:0 14px;border-radius:12px;background:rgba(242,177,1,.16);color:#fff;text-decoration:none;font-size:15px}
+.hb .hm a.mapp:hover{background:rgba(242,177,1,.28)}
+.appbar{display:flex;align-items:center;gap:10px;max-width:720px;margin:10px auto 0;padding:10px 12px;border-radius:14px;background:#fff8e1;border:1px solid #f2c94c;color:#3b3000;font-size:14px}
+.appbar[hidden]{display:none}
+.appbar .ab-i{font-size:20px}.appbar .ab-t{flex:1;font-weight:600}
+.appbar .ab-g{flex:none;padding:8px 14px;border-radius:10px;background:#115035;color:#fff;font-weight:700;text-decoration:none}
+.appbar .ab-x{flex:none;width:36px;height:36px;border:0;border-radius:10px;background:transparent;font-size:16px;cursor:pointer;color:#3b3000}
+.hb .hm a.mapp[hidden]{display:none}

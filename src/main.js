@@ -2,6 +2,7 @@ import './style.css';
 import { TX } from './tx.js';
 import { VTX } from './tx-verify.js';
 import { GTX } from './tx-grow.js';
+import { ATX, appDownload } from './app-download.js';
 import { createGrow } from './grow.js';
 import { RTX } from './tx-riders.js';
 import { createRiders } from './riders.js';
@@ -13,6 +14,7 @@ Object.assign(TX.en, VTX.en); Object.assign(TX.sw, VTX.sw);
 for (const l of ['en', 'sw']) { const { nkg, ...g } = GTX[l]; Object.assign(TX[l], g); TX[l].nk = { ...TX[l].nk, ...nkg }; }
 for (const l of ['en', 'sw']) Object.assign(TX[l], GGTX[l]);
 for (const l of ['en', 'sw']) Object.assign(TX[l], STX[l]);
+for (const l of ['en', 'sw']) Object.assign(TX[l], ATX[l]);
 for (const l of ['en', 'sw']) { const { nkr, ...r } = RTX[l]; Object.assign(TX[l], r); TX[l].nk = { ...TX[l].nk, ...nkr }; }
 import { CATS, COUNTIES, TABS, EMO, PRICES, DOC, DEL, LEGAL } from './data.js';
 import { sb, BUCKET, mediaUrl, phoneEmail } from './supabase.js';
@@ -137,6 +139,7 @@ function chrome() {
   const mb = $('#mnu'); mb.setAttribute('aria-label', t('menu')); mb.title = t('menu');
   b.toggleAttribute('aria-current', S.tab == 'account');
   $('#mset').textContent = t('settings');
+  appDownload(t, $);
   const lo = $('#mlo'); lo.hidden = !S.user; lo.textContent = t('logout');
   const hb = $('#home'); if (hb) hb.setAttribute('aria-label', t('home') + ': Shamba Soko');
   $('#nav').innerHTML = navTabs().map(([k, i]) => `<button data-a="tab" data-v="${k}" ${k == S.tab ? 'aria-current="page"' : ''}><span aria-hidden="true">${k == 'shop' ? '🏠' : i}</span>${k == 'shop' ? t('home') : t(k)}${k == 'cart' && cnt() ? `<b aria-label="${cnt()}">${cnt()}</b>` : k == 'orders' && pendN() ? `<b aria-label="${pendN()}">${pendN()}</b>` : k == 'rides' && rideN() ? `<b aria-label="${rideN()}">${rideN()}</b>` : ''}</button>`).join('');
