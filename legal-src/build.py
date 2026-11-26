@@ -45,7 +45,7 @@ footer{{max-width:760px;margin:0 auto;padding:0 16px 40px;color:var(--mut);font-
 </style>
 </head>
 <body>
-<header><a href="/" aria-label="Shamba Soko home"><svg width="34" height="34" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="53" fill="none" stroke="#F2B100" stroke-width="9"/><path d="M60 98V54" stroke="#fff" stroke-width="8" stroke-linecap="round"/><path d="M60 60c0-22 13-35 34-36-1 22-14 35-34 36z" fill="#F2B100"/><path d="M60 72c0-18-11-29-29-30 0 18 11 29 29 30z" fill="#fff"/></svg><span>Shamba <b>Soko</b></span></a></header>
+<header><a href="/" aria-label="Shamba Soko home"><svg width="34" height="34" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="59" fill="#fff"/><circle cx="60" cy="60" r="54" fill="none" stroke="#115035" stroke-width="5"/><path d="M60 52v46" stroke="#115035" stroke-width="5" stroke-linecap="round"/><path d="M58.8 71.6C41.5 71 31.5 59 31.4 42.3 47.5 43 56.5 52.5 58.8 71.6z" fill="#115035"/><path d="M59.8 60.2C60 39 73.5 25.5 94 24 92.8 45 81 58.6 59.8 60.2z" fill="#F2B101"/></svg><span>Shamba <b>Soko</b></span></a></header>
 <main>
 <h1>{title}</h1>
 <p class="upd">Last updated: {UPDATED}</p>
